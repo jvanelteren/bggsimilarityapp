@@ -6,7 +6,8 @@ pd.options.mode.chained_assignment = None
 import os
 from dotproductbias import DotProductBias
 import model
-st.info(os.getcwd())
+from st_aggrid.shared import GridUpdateMode  
+
 from st_aggrid import AgGrid
 def update():
      # refreshes table when filters are changed
@@ -34,8 +35,6 @@ def reset(clear_cache=False):
      st.session_state.setdefault('minaverage', 0)
      st.session_state.setdefault('weight', [0.,5.])
      st.session_state.setdefault('amountresults', 10)
-     st.session_state.setdefault('sorting', 'similarity')
-     st.session_state.setdefault('reverse', False)
      st.session_state.setdefault('quick_selection', 'Chess')
      st.session_state.setdefault('quick_options', ['Agricola', 'Pandemic', 'Chess', 'Monopoly'])
      st.session_state.setdefault('model', 'standard')
@@ -54,7 +53,7 @@ def filter(df):
      # filtered_df.set_index('thumbnail', inplace=True)
      # filtered_df.index.name = None
      
-     filtered_df =  filtered_df.sort_values(st.session_state['sorting'], ascending=st.session_state['reverse'])
+     filtered_df =  filtered_df.sort_values('similarity', ascending=False)
      st.session_state['quick_options'] = filtered_df['name'][:10]
      return filtered_df
 # Sidebar filters
@@ -72,16 +71,13 @@ st.sidebar.radio(
     "Amount of results",[10, 100,1000], key='amountresults', on_change=update
 )
 st.sidebar.radio(
-    "Sort based on",['similarity', 'average', 'usersrated', 'averageweight'], key='sorting', on_change=update
-)
-st.sidebar.checkbox(
-    "Reverse sort",key='reverse', on_change=update
-)
-st.sidebar.radio(
     "Model",['standard', 'experimental'], key='model', on_change=modelupdate
 )
 
 st.title('BoardGameExplorer')
+mobile = st.radio(
+    "",['mobile', 'desktop'],
+)
 game = st.selectbox(label='Select a game and see what the most similar games are!', options=model.df_games.sort_values('usersrated', ascending=False)['name'], key='selected_game')
 df = filter(model.most_similar_games(st.session_state['selected_game']))
 
@@ -94,7 +90,6 @@ if st.sidebar.button('Reset selections'):
      st.experimental_rerun()
  
 from st_aggrid import JsCode, GridOptionsBuilder
-gb = GridOptionsBuilder.from_dataframe(df)
 
 # gb.configure_column("link", headerName="thumbnail",
 #                             cellRenderer=JsCode('''function(params) {return '<a href="https://www.google.com">params.value</a>'}'''),
@@ -128,36 +123,65 @@ link_jscode = JsCode("""
   };
   """)
 
-  
-df[' ']= ' '
-# gb.configure_pagination(paginationAutoPageSize=True )
-gb.configure_grid_options(rowHeight=100, height=130*st.session_state['amountresults']+100, pagination=True)
+if mobile == 'mobile':
+     gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'thumbnail', 'name']])
 
-gb.configure_column(' ', maxwidth=200, cellRenderer=image_nation, initialPinned='left')
-gb.configure_column("url", maxwidth=50, cellRenderer=link_jscode)
-gb.configure_column("usersrated", maxwidth=80)
-gb.configure_column('similarity', maxwidth=60, valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
-gb.configure_column('average', maxwidth=60,valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
-gb.configure_column('bayesaverage', maxwidth=60, valueFormatter="data.bayesaverage.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
-gb.configure_column('averageweight', maxwidth=60, valueFormatter="data.averageweight.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
-gb.configure_selection(use_checkbox=True)
-gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
-gb.configure_column('name', hide=True,suppressToolPanel=True)
-gridOptions = gb.build()
-       
-       
-# AgGrid(df, gridOptions=gridOptions, allow_unsafe_jscode=True
-     #   )
-grid_height= 1000
-grid_response = AgGrid(
-df,
-gridOptions=gridOptions,
-height=grid_height,
-fit_columns_on_grid_load=True,
-allow_unsafe_jscode=True,
-enable_enterprise_modules=False,
-)
+     df[' ']= ' '
+     # gb.configure_pagination(paginationAutoPageSize=True )
+     gb.configure_grid_options(rowHeight=100, pagination=True)
 
+     gb.configure_column(' ', minWidth=100, cellRenderer=image_nation, initialPinned='left')
+     gb.configure_column("url", cellRenderer=link_jscode)
+     gb.configure_column('average', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
+     gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
+     gb.configure_column('name', hide=True,suppressToolPanel=True)
+     gb.configure_selection(selection_mode="single", use_checkbox=False)
+     
+     gridOptions = gb.build()
+          
+          
+     # AgGrid(df, gridOptions=gridOptions, allow_unsafe_jscode=True
+          #   )
+     grid_height= 100*st.session_state['amountresults']+70
+     grid_response = AgGrid(
+     df[[' ', 'url', 'average', 'thumbnail', 'name']],
+     gridOptions=gridOptions,
+     height=grid_height,
+     fit_columns_on_grid_load=True,
+     allow_unsafe_jscode=True,
+     update_mode=GridUpdateMode.SELECTION_CHANGED,
+     )
+else:
+     gb = GridOptionsBuilder.from_dataframe(df)
+     
+     df[' ']= ' '
+     # gb.configure_pagination(paginationAutoPageSize=True )
+     gb.configure_grid_options(rowHeight=100, pagination=True)
+     gb.configure_column(' ', minWidth=145, cellRenderer=image_nation, initialPinned='left')
+     gb.configure_column("url", cellRenderer=link_jscode)
+     gb.configure_column("usersrated", maxwidth=80)
+     gb.configure_column('similarity', valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
+     gb.configure_column('average', valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
+     # gb.configure_column('bayesaverage', valueFormatter="data.bayesaverage.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
+     gb.configure_column('averageweight', valueFormatter="data.averageweight.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
+     gb.configure_column('name', hide=True,suppressToolPanel=True)
+     gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
+     gb.configure_selection(selection_mode="single", use_checkbox=False)
+     
+     gridOptions = gb.build()
+     # AgGrid(df, gridOptions=gridOptions, allow_unsafe_jscode=True
+          #   )
+     grid_height= 100*st.session_state['amountresults']+70
+
+     grid_response = AgGrid(
+     df,
+     gridOptions=gridOptions,
+     update_mode=GridUpdateMode.SELECTION_CHANGED,
+     
+     height=grid_height,
+     fit_columns_on_grid_load=True,
+     allow_unsafe_jscode=True,
+     )
 # grid_response = AgGrid(
 #     df, 
 #     gridOptions=gridOptions,
@@ -173,3 +197,4 @@ enable_enterprise_modules=False,
 # with col1:
 #      table = st.dataframe(df.to_html(escape = False, index=False), unsafe_allow_html = True)
 
+st.info(grid_response['selected_rows'][0]['name'])
