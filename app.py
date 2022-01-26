@@ -95,7 +95,6 @@ if st.sidebar.button('Reset selections'):
  
 from st_aggrid import JsCode, GridOptionsBuilder
 gb = GridOptionsBuilder.from_dataframe(df)
-gb.configure_pagination()
 
 # gb.configure_column("link", headerName="thumbnail",
 #                             cellRenderer=JsCode('''function(params) {return '<a href="https://www.google.com">params.value</a>'}'''),
@@ -106,7 +105,7 @@ image_nation = JsCode("""function (params) {
      
           if (params.data.thumbnail) {
                imageElement.src = params.data.thumbnail;
-               imageElement.width="100";
+               imageElement.width="120";
           } else {
                imageElement.src = "";
           }
@@ -131,15 +130,16 @@ link_jscode = JsCode("""
 
   
 df[' ']= ' '
-gb.configure_grid_options(rowHeight=100, height=110*st.session_state['amountresults']+100, pagination=True)
+# gb.configure_pagination(paginationAutoPageSize=True )
+gb.configure_grid_options(rowHeight=100, height=130*st.session_state['amountresults']+100, pagination=True)
 
-gb.configure_column(' ', width=80, cellRenderer=image_nation, initialPinned='left')
-gb.configure_column("url", width=50, cellRenderer=link_jscode)
-gb.configure_column("usersrated", width=80)
-gb.configure_column('similarity', width=60, valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
-gb.configure_column('average', width=60,valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
-gb.configure_column('bayesaverage', width=60, valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
-gb.configure_column('averageweight', width=60, valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
+gb.configure_column(' ', maxwidth=200, cellRenderer=image_nation, initialPinned='left')
+gb.configure_column("url", maxwidth=50, cellRenderer=link_jscode)
+gb.configure_column("usersrated", maxwidth=80)
+gb.configure_column('similarity', maxwidth=60, valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
+gb.configure_column('average', maxwidth=60,valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
+gb.configure_column('bayesaverage', maxwidth=60, valueFormatter="data.bayesaverage.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
+gb.configure_column('averageweight', maxwidth=60, valueFormatter="data.averageweight.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
 gb.configure_selection(use_checkbox=True)
 gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
 gb.configure_column('name', hide=True,suppressToolPanel=True)
@@ -157,7 +157,6 @@ fit_columns_on_grid_load=True,
 allow_unsafe_jscode=True,
 enable_enterprise_modules=False,
 )
-
 
 # grid_response = AgGrid(
 #     df, 
