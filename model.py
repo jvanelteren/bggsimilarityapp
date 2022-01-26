@@ -72,7 +72,7 @@ def get_game_preds(game):
 
 
 def table():
-    cols = ['thumbnail','name','usersrated','bayesaverage','average', 'averageweight']
+    cols = ['thumbnail','url','name','usersrated','bayesaverage','average', 'averageweight']
     # 'model_score','distance'
     return df_games[cols]
     # result = result[['thumbnail','primary','usersrated','bayesaverage','average','model_score','distance','id']].copy()
