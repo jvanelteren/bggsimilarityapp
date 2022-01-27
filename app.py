@@ -21,13 +21,23 @@ def modelupdate():
           model.m = model.modelstandard
      elif st.session_state['model'] == 'experimental':
           model.m = model.modeltransform
+          bla.expanded = False
      update()
 # Initialisation of session state
 def reset(clear_cache=False):
      if clear_cache:
           for key in st.session_state.keys():
                del st.session_state[key]
-
+               
+     if 'selected_game' not in st.session_state:
+          hide_streamlit_style = """
+               <style>
+               #MainMenu {visibility: hidden;}
+               footer {visibility: hidden;}
+               </style>
+               """
+          st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+               
      st.session_state.setdefault('selected_game', 'Chess')
      st.session_state.setdefault('minvotes', 0)
      st.session_state.setdefault('minaverage', 0)
@@ -63,12 +73,17 @@ st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=mo
 
 st.title('BoardGameExplorer')
 
-placeholder = st.empty()
-st.markdown("This app is designed to find similar games. You may find games you didn't know but will like even more! The mobile version is basic, while the desktop version shows more stats.")
-with st.expander("More details"):
+st.markdown("This app is designed to find similar games. You may find games you didn't know but will love 😍 even more! The mobile version is basic, while the desktop version shows more stats 🔢.")
+with st.expander("🕵️‍♀️  Click for mobile / desktop and more details"):
+     mobile = st.radio(
+     "Select the version of the app",['mobile', 'desktop'],
+     )
+     st.markdown('**Explanation**')
      st.write("""
+         
+         
          The results are sorted by similarity by default. This means obviously that the game you selected comes first.
-         Other columns are:
+         Other stats are:
          
          ▶ Average: the average rating the game received
         
@@ -78,14 +93,17 @@ with st.expander("More details"):
         
          ▶ Weight: the 'complexity of a game between 1-5
          
-         This recommender model uses a technique called 'collaborative filtering', which is similar to how Netflix recommends your next serie.
-         A great explanation about the pro's and con's can be found [here](https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1740-9713.2019.01317.x) 
+         👉Click on a row to see results for that game. 
          
-         Huge thank you to [BoardGameGeek](https://boardgamegeek.com/) for making their data openly available.
+         👉Click on the column names to sort. 
+         
+         👉Click the game name to go to the game on BoardGameGeek. 
+         
+         This recommender model uses a technique called 'collaborative filtering', which is similar to how Netflix recommends your next serie.
+         A great explanation about the pro's and con's can be found [here](https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1740-9713.2019.01317.x)          
      """)
-     mobile = st.radio(
-     "",['mobile', 'desktop'],
-     )
+placeholder = st.empty()
+
 df = filter(model.most_similar_games(st.session_state['selected_game']))
 # import seaborn as sns
 # cm = sns.light_palette("green", as_cmap=True)
@@ -194,3 +212,17 @@ if grid_response['selected_rows']:
           st.experimental_rerun()
 
 placeholder.selectbox(label='Select a game and see what the most similar games are!', options=model.df_games.sort_values('usersrated', ascending=False)['name'], key='selected_game')
+
+with st.expander("⚙️ Thanks & feedback ", expanded=False):
+     st.markdown(
+               """
+          Let me know if you have feedback, e.g. on Reddit
+
+          Thanks to:
+
+          * :sun_with_face: [BoardGameGeek](https://boardgamegeek.com/) for making their data openly available.
+          * :sun_with_face: [Streamlit](https://streamlit.io/) voor het maken van zo'n geweldige library
+
+          [![License: Creative Commons Naamsvermelding-GelijkDelen 4.0 Internationaal-licentie](https://i.creativecommons.org/l/by-sa/4.0/80x15.png)](https://creativecommons.org/licenses/by-sa/3.0/) 2022 Jesse van Elteren
+               """
+     )
