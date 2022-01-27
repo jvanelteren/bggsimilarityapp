@@ -12,8 +12,8 @@ def most_similar_games(gamename, n=300):
     distances = nn.CosineSimilarity(dim=1)(m.game_factors, m.game_factors[gameidx][None])
     idx = distances.argsort(descending=True)
     df = table()
-    df['similarity'] = distances.cpu().detach().numpy().copy()
-    return df.iloc[idx.cpu().numpy()]
+    df.loc[:,'similarity'] = distances.detach().numpy().copy()
+    return df.iloc[idx.numpy()]
 
 def most_similar_users(username, n=10):
     idx = users.o2i[username]

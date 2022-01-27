@@ -60,11 +60,18 @@ st.sidebar.radio("Amount of results",[10, 50,200], key='amountresults', on_chang
 st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate)
 
 st.title('BoardGameExplorer')
-mobile = st.radio(
-    "",['mobile', 'desktop'],
-)
-placeholder = st.empty()
 
+placeholder = st.empty()
+st.markdown("This app is designed to find similar games. You may find games you didn't know but will like even more! The mobile version is basic, while the desktop version shows more stats.")
+with st.expander("More details"):
+     st.write("""
+         The chart above shows some numbers I picked for you.
+         I rolled actual dice for these, so they're *guaranteed* to
+         be random.
+     """)
+     mobile = st.radio(
+     "",['mobile', 'desktop'],
+     )
 df = filter(model.most_similar_games(st.session_state['selected_game']))
 # import seaborn as sns
 # cm = sns.light_palette("green", as_cmap=True)
@@ -168,7 +175,8 @@ else:
      )
 
 if grid_response['selected_rows']:
-     st.session_state['selected_game'] = grid_response['selected_rows'][0]['name']
-     st.experimental_rerun()
+     if grid_response['selected_rows'][0]['name'] != st.session_state['selected_game']:
+          st.session_state['selected_game'] = grid_response['selected_rows'][0]['name']
+          st.experimental_rerun()
 
 placeholder.selectbox(label='Select a game and see what the most similar games are!', options=model.df_games.sort_values('usersrated', ascending=False)['name'], key='selected_game')
