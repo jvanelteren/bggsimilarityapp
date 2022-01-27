@@ -9,6 +9,8 @@ import model
 from st_aggrid.shared import GridUpdateMode  
 
 from st_aggrid import AgGrid
+
+
 def update():
      # refreshes table when filters are changed
      st.session_state['selected_game'] = st.session_state['selected_game']
@@ -65,9 +67,21 @@ placeholder = st.empty()
 st.markdown("This app is designed to find similar games. You may find games you didn't know but will like even more! The mobile version is basic, while the desktop version shows more stats.")
 with st.expander("More details"):
      st.write("""
-         The chart above shows some numbers I picked for you.
-         I rolled actual dice for these, so they're *guaranteed* to
-         be random.
+         The results are sorted by similarity by default. This means obviously that the game you selected comes first.
+         Other columns are:
+         
+         ▶ Average: the average rating the game received
+        
+         ▶ Geekrating: the BGG GeekRating, which penalizes game with few ratings
+        
+         ▶ # Ratings: the amount of times a game has been rated
+        
+         ▶ Weight: the 'complexity of a game between 1-5
+         
+         This recommender model uses a technique called 'collaborative filtering', which is similar to how Netflix recommends your next serie.
+         A great explanation about the pro's and con's can be found [here](https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1740-9713.2019.01317.x) 
+         
+         Huge thank you to [BoardGameGeek](https://boardgamegeek.com/) for making their data openly available.
      """)
      mobile = st.radio(
      "",['mobile', 'desktop'],
