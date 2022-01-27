@@ -13,10 +13,14 @@ def update():
      # refreshes table when filters are changed
      st.session_state['selected_game'] = st.session_state['selected_game']
 
-def quickselect():
-     # refreshes table when filters are changed
-     st.session_state['selected_game'] = st.session_state['quick_selection']
-     update()
+# def quickselect():
+#      # refreshes table when filters are changed
+
+#      st.session_state['selected_game'] = st.session_state['found']
+#      update()
+#      # st.session_state['selected_game'] = st.session_state['quick_selection']
+#      # update()
+
 
 def modelupdate():
      # refreshes table when filters are changed
@@ -30,6 +34,8 @@ def reset(clear_cache=False):
      if clear_cache:
           for key in st.session_state.keys():
                del st.session_state[key]
+
+          
      st.session_state.setdefault('selected_game', 'Chess')
      st.session_state.setdefault('minvotes', 0)
      st.session_state.setdefault('minaverage', 0)
@@ -58,32 +64,22 @@ def filter(df):
      return filtered_df
 # Sidebar filters
 st.sidebar.header('Options to filter and sort')
-st.sidebar.slider(
-    "Minimal amount of votes",0,5000, key='minvotes', step=100, on_change=update
-)
-st.sidebar.slider(
-    "Minimum average score",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f"
-)
-st.sidebar.slider(
-    "Weight",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f"
-)
-st.sidebar.radio(
-    "Amount of results",[10, 100,1000], key='amountresults', on_change=update
-)
-st.sidebar.radio(
-    "Model",['standard', 'experimental'], key='model', on_change=modelupdate
-)
+st.sidebar.slider("Minimal amount of votes",0,5000, key='minvotes', step=100, on_change=update)
+st.sidebar.slider("Minimum average score",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
+st.sidebar.slider("Weight",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f")
+st.sidebar.radio("Amount of results",[10, 100,1000], key='amountresults', on_change=update)
+st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate)
 
 st.title('BoardGameExplorer')
 mobile = st.radio(
     "",['mobile', 'desktop'],
 )
-game = st.selectbox(label='Select a game and see what the most similar games are!', options=model.df_games.sort_values('usersrated', ascending=False)['name'], key='selected_game')
+placeholder = st.empty()
 df = filter(model.most_similar_games(st.session_state['selected_game']))
 
 
 st.sidebar.radio(
-    "Quick select game",st.session_state['quick_options'], key = 'quick_selection', on_change=quickselect
+    "Quick select game",st.session_state['quick_options'], key = 'quick_selection'
 )
 if st.sidebar.button('Reset selections'):
      reset(clear_cache=True)
@@ -196,5 +192,8 @@ else:
 # col1, = st.columns(1)
 # with col1:
 #      table = st.dataframe(df.to_html(escape = False, index=False), unsafe_allow_html = True)
-
-st.info(grid_response['selected_rows'][0]['name'])
+if grid_response['selected_rows']:
+     st.session_state['selected_game'] = grid_response['selected_rows'][0]['name']
+     st.experimental_rerun()
+st.info(st.session_state)
+placeholder.selectbox(label='Select a game and see what the most similar games are!', options=model.df_games.sort_values('usersrated', ascending=False)['name'], key='selected_game')
