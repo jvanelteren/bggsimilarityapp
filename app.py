@@ -64,43 +64,19 @@ def filter(df):
 
 # Sidebar filters
 st.sidebar.header('Options to filter and sort')
+mobile = st.sidebar.radio("Select the version of the app",['mobile', 'desktop'],)
+st.sidebar.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
 st.sidebar.slider("Minimal amount of votes",0,5000, key='minvotes', step=100, on_change=update)
 st.sidebar.slider("Minimum average score",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
 st.sidebar.slider("Weight",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f")
 st.sidebar.radio("Amount of results",[20, 50,200], key='amountresults', on_change=update)
 st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate)
 
-st.title('BoardGameExplorer')
+st.write('<style>div.row-widget.stExpander > div{align:right;}</style>', unsafe_allow_html=True)
 
-st.markdown("This app is designed to find similar games. You may find games you didn't know but will love 😍 even more! The mobile version is basic, while the desktop version shows more stats 🔢.")
-with st.expander("🕵️‍♀️  Click for mobile / desktop and more details"):
-     mobile = st.radio(
-     "Select the version of the app",['mobile', 'desktop'],
-     )
-     st.markdown('**Explanation**')
-     st.write("""
-         
-         
-         The results are sorted by similarity by default. This means obviously that the game you selected comes first.
-         Other stats are:
-         
-         ▶ Average: the average rating the game received
-        
-         ▶ Geekrating: the BGG GeekRating, which penalizes game with few ratings
-        
-         ▶ # Ratings: the amount of times a game has been rated
-        
-         ▶ Weight: the 'complexity of a game between 1-5
-         
-         👉Click on a row to see results for that game. 
-         
-         👉Click on the column names to sort. 
-         
-         👉Click the game name to go to the game on BoardGameGeek. 
-         
-         This recommender model uses a technique called 'collaborative filtering', which is similar to how Netflix recommends your next serie.
-         A great explanation about the pro's and con's can be found [here](https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1740-9713.2019.01317.x)          
-     """)
+st.markdown("<h1 style='text-align: center; color: black;'>BoardGame Explorer</h1>", unsafe_allow_html=True)
+# st.title('BoardGame Explorer')
+
 placeholder = st.empty()
 
 df = filter(model.most_similar_games(st.session_state['selected_game']))
@@ -114,20 +90,7 @@ if st.sidebar.button('Reset selections'):
  
 from st_aggrid import JsCode, GridOptionsBuilder
 
-image_nation = JsCode("""function (params) {
-          var element = document.createElement("span");
-          var imageElement = document.createElement("img");
-     
-          if (params.data.thumbnail) {
-               imageElement.src = params.data.thumbnail;
-               imageElement.width="120";
-          } else {
-               imageElement.src = "";
-          }
-          element.appendChild(imageElement);
-          element.appendChild(document.createTextNode(params.value));
-          return element;
-          }""")
+
 link_jscode = JsCode("""
   function(params) {
   	var element = document.createElement("span");
@@ -144,6 +107,20 @@ link_jscode = JsCode("""
   """)
 
 if mobile == 'mobile':
+     image_nation = JsCode("""function (params) {
+          var element = document.createElement("span");
+          var imageElement = document.createElement("img");
+     
+          if (params.data.thumbnail) {
+               imageElement.src = params.data.thumbnail;
+               imageElement.width="80";
+          } else {
+               imageElement.src = "";
+          }
+          element.appendChild(imageElement);
+          element.appendChild(document.createTextNode(params.value));
+          return element;
+          }""")
      gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'thumbnail', 'name']])
 
      df[' ']= ' '
@@ -154,7 +131,6 @@ if mobile == 'mobile':
      gb.configure_column("url", headerName='Name', cellRenderer=link_jscode)
 
      gb.configure_column('average', headerName='Avg', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
-     gb.configure_column("usersrated", headerName='# Ratings', maxwidth=80)
      gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
      gb.configure_column('name', hide=True,suppressToolPanel=True)
      gb.configure_selection(selection_mode="single", use_checkbox=False)
@@ -166,7 +142,7 @@ if mobile == 'mobile':
           #   )
      grid_height= 100*st.session_state['amountresults']+80
      grid_response = AgGrid(
-     df[[' ', 'url', 'average', 'usersrated', 'thumbnail', 'name']],
+     df[[' ', 'url', 'average','thumbnail', 'name']],
      gridOptions=gridOptions,
      height=grid_height,
      fit_columns_on_grid_load=True,
@@ -174,13 +150,27 @@ if mobile == 'mobile':
      update_mode=GridUpdateMode.SELECTION_CHANGED,
      )
 else:
+     image_nation = JsCode("""function (params) {
+          var element = document.createElement("span");
+          var imageElement = document.createElement("img");
+     
+          if (params.data.thumbnail) {
+               imageElement.src = params.data.thumbnail;
+               imageElement.width="120";
+          } else {
+               imageElement.src = "";
+          }
+          element.appendChild(imageElement);
+          element.appendChild(document.createTextNode(params.value));
+          return element;
+          }""")
      gb = GridOptionsBuilder.from_dataframe(df)
      
      df[' ']= ' '
      # gb.configure_pagination(paginationAutoPageSize=True )
      gb.configure_grid_options(rowHeight=100, pagination=True)
-     gb.configure_column(' ', minWidth=145, cellRenderer=image_nation, initialPinned='left')
-     gb.configure_column("url", headerName='Name', cellRenderer=link_jscode)
+     gb.configure_column(' ', minWidth=130, cellRenderer=image_nation, initialPinned='left')
+     gb.configure_column("url", minWidth=120, headerName='Name', cellRenderer=link_jscode)
      gb.configure_column("usersrated", headerName='# Ratings', maxwidth=80)
      gb.configure_column('similarity', headerName='Similarity', valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})", sort='desc')
      gb.configure_column('average', headerName='Average', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})")
@@ -210,8 +200,32 @@ if grid_response['selected_rows']:
           st.session_state['selected_game'] = grid_response['selected_rows'][0]['name']
           st.experimental_rerun()
 
-placeholder.selectbox(label='Select a game and see what the most similar games are!', options=model.df_games.sort_values('usersrated', ascending=False)['name'], key='selected_game')
-
+placeholder.selectbox(label="This app is designed to find similar games. You may find games you didn't know but will love 😍 even more!", options=model.df_games.sort_values('usersrated', ascending=False)['name'], key='selected_game')
+with st.expander("🔎  Click for explanation"):
+     
+     st.write("""
+         
+         
+         The results are sorted by similarity by default. This means obviously that the game you selected comes first.
+         Other stats are:
+         
+         ▶ Average: the average rating the game received
+        
+         ▶ Geekrating: the BGG GeekRating, which penalizes game with few ratings
+        
+         ▶ # Ratings: the amount of times a game has been rated
+        
+         ▶ Weight: the 'complexity of a game between 1-5
+         
+         👉Click on a row to see results for that game. 
+         
+         👉Click on the column names to sort. 
+         
+         👉Click the game name to go to the game on BoardGameGeek. 
+         
+         This recommender model uses a technique called 'collaborative filtering', which is similar to how Netflix recommends your next serie.
+         A great explanation about the pro's and con's can be found [here](https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1740-9713.2019.01317.x)          
+     """)
 with st.expander("⚙️ Thanks & feedback ", expanded=False):
      st.markdown(
                """
