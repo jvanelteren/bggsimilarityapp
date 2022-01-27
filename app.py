@@ -24,7 +24,6 @@ def modelupdate():
           model.m = model.modelstandard
      elif st.session_state['model'] == 'experimental':
           model.m = model.modeltransform
-          bla.expanded = False
      update()
 # Initialisation of session state
 def reset(clear_cache=False):
