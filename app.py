@@ -10,7 +10,6 @@ from st_aggrid.shared import GridUpdateMode
 
 from st_aggrid import AgGrid
 
-
 def update():
      # refreshes table when filters are changed
      st.session_state['selected_game'] = st.session_state['selected_game']
@@ -29,14 +28,14 @@ def reset(clear_cache=False):
           for key in st.session_state.keys():
                del st.session_state[key]
                
-     if 'selected_game' not in st.session_state:
-          hide_streamlit_style = """
-               <style>
-               #MainMenu {visibility: hidden;}
-               footer {visibility: hidden;}
-               </style>
-               """
-          st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+     hide_streamlit_style = """
+          <style>
+          #MainMenu {visibility: hidden;}
+          footer {visibility: hidden;}
+          </style>
+          """
+     st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+     
                
      st.session_state.setdefault('selected_game', 'Chess')
      st.session_state.setdefault('minvotes', 1000)
