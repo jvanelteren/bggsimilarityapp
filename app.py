@@ -9,6 +9,10 @@ import model
 from st_aggrid.shared import GridUpdateMode  
 
 from st_aggrid import AgGrid
+st.set_page_config(
+   page_title="BoardGame Explorer",
+   page_icon="🎈",
+)
 
 def update():
      # refreshes table when filters are changed
@@ -63,19 +67,18 @@ def filter(df):
      return filtered_df
 
 # Sidebar filters
-st.sidebar.header('Options to filter and sort')
-mobile = st.sidebar.radio("Select the version of the app",['mobile', 'desktop'],)
+st.sidebar.header('Options')
+mobile = st.sidebar.radio("App version",['mobile', 'desktop'],)
 st.sidebar.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
-st.sidebar.slider("Minimal amount of votes",0,5000, key='minvotes', step=100, on_change=update)
-st.sidebar.slider("Minimum average score",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
-st.sidebar.slider("Weight",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f")
+st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update)
+st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
+st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f")
 st.sidebar.radio("Amount of results",[20, 50,200], key='amountresults', on_change=update)
 st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate)
 
 st.write('<style>div.row-widget.stExpander > div{align:right;}</style>', unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center; color: black;'>BoardGame Explorer</h1>", unsafe_allow_html=True)
-# st.title('BoardGame Explorer')
+st.title('BoardGame Explorer')
 
 placeholder = st.empty()
 
@@ -113,7 +116,7 @@ if mobile == 'mobile':
      
           if (params.data.thumbnail) {
                imageElement.src = params.data.thumbnail;
-               imageElement.width="80";
+               imageElement.width="100";
           } else {
                imageElement.src = "";
           }
@@ -127,10 +130,10 @@ if mobile == 'mobile':
      # gb.configure_pagination(paginationAutoPageSize=True )
      gb.configure_grid_options(rowHeight=100, pagination=True)
 
-     gb.configure_column(' ', minWidth=100, cellRenderer=image_nation, initialPinned='left')
+     gb.configure_column(' ', minWidth=110, cellRenderer=image_nation, initialPinned='left')
      gb.configure_column("url", headerName='Name', cellRenderer=link_jscode)
 
-     gb.configure_column('average', headerName='Avg', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
+     gb.configure_column('average', maxWidth=80, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
      gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
      gb.configure_column('name', hide=True,suppressToolPanel=True)
      gb.configure_selection(selection_mode="single", use_checkbox=False)
@@ -204,7 +207,8 @@ placeholder.selectbox(label="This app is designed to find similar games. You may
 with st.expander("🔎  Click for explanation"):
      
      st.write("""
-         
+         This recommender model uses a technique called 'collaborative filtering', which is similar to how Netflix recommends your next serie.
+         A great explanation about the pro's and con's can be found [here](https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1740-9713.2019.01317.x)         
          
          The results are sorted by similarity by default. This means obviously that the game you selected comes first.
          Other stats are:
@@ -223,8 +227,6 @@ with st.expander("🔎  Click for explanation"):
          
          👉Click the game name to go to the game on BoardGameGeek. 
          
-         This recommender model uses a technique called 'collaborative filtering', which is similar to how Netflix recommends your next serie.
-         A great explanation about the pro's and con's can be found [here](https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1740-9713.2019.01317.x)          
      """)
 with st.expander("⚙️ Thanks & feedback ", expanded=False):
      st.markdown(
@@ -234,7 +236,7 @@ with st.expander("⚙️ Thanks & feedback ", expanded=False):
           Thanks to:
 
           * :sun_with_face: [BoardGameGeek](https://boardgamegeek.com/) for making their data openly available.
-          * :sun_with_face: [Streamlit](https://streamlit.io/) voor het maken van zo'n geweldige library
+          * :sun_with_face: [Streamlit](https://streamlit.io/) for such a great data science tool
 
           [![License: Creative Commons Naamsvermelding-GelijkDelen 4.0 Internationaal-licentie](https://i.creativecommons.org/l/by-sa/4.0/80x15.png)](https://creativecommons.org/licenses/by-sa/3.0/) 2022 Jesse van Elteren
                """
