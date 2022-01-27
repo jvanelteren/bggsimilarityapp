@@ -130,10 +130,10 @@ if mobile == 'mobile':
      # gb.configure_pagination(paginationAutoPageSize=True )
      gb.configure_grid_options(rowHeight=100, pagination=True)
 
-     gb.configure_column(' ', minWidth=110, cellRenderer=image_nation, initialPinned='left')
+     gb.configure_column(' ', minWidth=100, cellRenderer=image_nation, initialPinned='left')
      gb.configure_column("url", headerName='Name', cellRenderer=link_jscode)
 
-     gb.configure_column('average', maxWidth=80, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
+     gb.configure_column('average', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
      gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
      gb.configure_column('name', hide=True,suppressToolPanel=True)
      gb.configure_selection(selection_mode="single", use_checkbox=False)
