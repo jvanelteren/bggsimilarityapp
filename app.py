@@ -14,6 +14,7 @@ st.set_page_config(
    page_icon="🎈",
 )
 
+
 def update():
      # refreshes table when filters are changed
      st.session_state['selected_game'] = st.session_state['selected_game']
@@ -41,15 +42,15 @@ def reset(clear_cache=False):
      
                
      st.session_state.setdefault('selected_game', 'Chess')
-     st.session_state.setdefault('minvotes', 1000)
+     st.session_state.setdefault('minvotes', 500)
      st.session_state.setdefault('minaverage', 0)
      st.session_state.setdefault('weight', [0.,5.])
-     st.session_state.setdefault('amountresults', 20)
+     st.session_state.setdefault('amountresults', 10)
      st.session_state.setdefault('model', 'standard')
+     st.session_state.setdefault('tag_incl', [])
+     st.session_state.setdefault('tag_excl', [])
      modelupdate()
 reset()
-
-
 def filter(df):
      filtered_df = df.loc[(df['usersrated'] >= st.session_state['minvotes']) &
                           (df['average'] >= st.session_state['minaverage']) &
@@ -57,7 +58,11 @@ def filter(df):
                           (df['averageweight'] <= st.session_state['weight'][1])
                           
                           ][:st.session_state['amountresults']]
-
+     for tag in st.session_state['tag_incl']:
+          filtered_df = filtered_df.loc[filtered_df['tag'].str.contains(tag)]
+     if st.session_state['tag_excl']:
+          reg = '|'.join(st.session_state['tag_excl'])
+          filtered_df = filtered_df.loc[~filtered_df['tag'].str.contains(reg, regex=True)]
      
      # filtered_df.set_index('thumbnail', inplace=True)
      # filtered_df.index.name = None
@@ -72,7 +77,9 @@ st.sidebar.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</styl
 st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update)
 st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
 st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f")
-st.sidebar.radio("Amount of results",[20, 50,200], key='amountresults', on_change=update)
+st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_incl')
+st.sidebar.multiselect('Excluding all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_excl')
+st.sidebar.radio("Amount of results",[10, 50,22000], key='amountresults', on_change=update)
 st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate)
 
 st.write('<style>div.row-widget.stExpander > div{align:right;}</style>', unsafe_allow_html=True)
@@ -82,6 +89,7 @@ st.title('BoardGame Explorer')
 placeholder = st.empty()
 
 df = filter(model.most_similar_games(st.session_state['selected_game']))
+
 # import seaborn as sns
 # cm = sns.light_palette("green", as_cmap=True)
 # st.dataframe(df.style.background_gradient(cmap=cm))
@@ -107,6 +115,8 @@ link_jscode = JsCode("""
   	return element;
   };
   """)
+rowsperpage = 50
+grid_height= 100 * min(len(df), rowsperpage) + 80
 
 if mobile == 'mobile':
      image_nation = JsCode("""function (params) {
@@ -126,31 +136,16 @@ if mobile == 'mobile':
      gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'thumbnail', 'name']])
 
      df[' ']= ' '
-     # gb.configure_pagination(paginationAutoPageSize=True )
+     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
      gb.configure_grid_options(rowHeight=100, pagination=True)
-
      gb.configure_column(' ', minWidth=100, cellRenderer=image_nation, initialPinned='left')
      gb.configure_column("url", headerName='Name', cellRenderer=link_jscode)
-
      gb.configure_column('average', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
      gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
      gb.configure_column('name', hide=True,suppressToolPanel=True)
      gb.configure_selection(selection_mode="single", use_checkbox=False)
+     # df = df[[' ', 'url', 'average','thumbnail', 'name']]
      
-     gridOptions = gb.build()
-          
-          
-     # AgGrid(df, gridOptions=gridOptions, allow_unsafe_jscode=True
-          #   )
-     grid_height= 100*st.session_state['amountresults']+80
-     grid_response = AgGrid(
-     df[[' ', 'url', 'average','thumbnail', 'name']],
-     gridOptions=gridOptions,
-     height=grid_height,
-     fit_columns_on_grid_load=True,
-     allow_unsafe_jscode=True,
-     update_mode=GridUpdateMode.SELECTION_CHANGED,
-     )
 else:
      image_nation = JsCode("""function (params) {
           var element = document.createElement("span");
@@ -166,10 +161,10 @@ else:
           element.appendChild(document.createTextNode(params.value));
           return element;
           }""")
-     gb = GridOptionsBuilder.from_dataframe(df)
+     gb = GridOptionsBuilder.from_dataframe(df.drop('tag', axis=1))
      
      df[' ']= ' '
-     # gb.configure_pagination(paginationAutoPageSize=True )
+     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
      gb.configure_grid_options(rowHeight=100, pagination=True)
      gb.configure_column(' ', minWidth=130, cellRenderer=image_nation, initialPinned='left')
      gb.configure_column("url", minWidth=120, headerName='Name', cellRenderer=link_jscode)
@@ -182,20 +177,14 @@ else:
      gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
      gb.configure_selection(selection_mode="single", use_checkbox=False)
      
-     gridOptions = gb.build()
-     # AgGrid(df, gridOptions=gridOptions, allow_unsafe_jscode=True
-          #   )
-     grid_height= 100*st.session_state['amountresults']+80
-
-     grid_response = AgGrid(
+gridOptions = gb.build()
+grid_response = AgGrid(
      df,
      gridOptions=gridOptions,
      update_mode=GridUpdateMode.SELECTION_CHANGED,
-     
      height=grid_height,
      fit_columns_on_grid_load=True,
-     allow_unsafe_jscode=True,
-     )
+     allow_unsafe_jscode=True)
 
 if grid_response['selected_rows']:
      if grid_response['selected_rows'][0]['name'] != st.session_state['selected_game']:
@@ -209,7 +198,7 @@ with st.expander("🔎  Click for explanation"):
          This recommender model uses a technique called 'collaborative filtering', which is similar to how Netflix recommends your next serie.
          A great explanation about the pro's and con's can be found [here](https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1740-9713.2019.01317.x)         
          
-         The results are sorted by similarity by default. This means obviously that the game you selected comes first.
+         The results are sorted by similarity with the selected game, which means that the game you selected comes on top.
          Other stats are:
          
          ▶ Average: the average rating the game received
@@ -227,6 +216,8 @@ with st.expander("🔎  Click for explanation"):
          👉Click the game name to go to the game on BoardGameGeek. 
          
      """)
+     
+     
 with st.expander("⚙️ Thanks & feedback ", expanded=False):
      st.markdown(
                """

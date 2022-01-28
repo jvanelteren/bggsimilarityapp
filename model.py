@@ -2,17 +2,16 @@ from fastai.collab import *
 from fastai.tabular.all import *
 from pathlib import Path
 path = Path()
-
     
 def create_params(size):
     return nn.Parameter(torch.zeros(*size).normal_(0, 0.01))
 
-def most_similar_games(gamename, n=300):
+def most_similar_games(gamename):
     gameidx = games.o2i[gamename]
     distances = nn.CosineSimilarity(dim=1)(m.game_factors, m.game_factors[gameidx][None])
     idx = distances.argsort(descending=True)
     df = table()
-    df.loc[:,'similarity'] = distances.detach().numpy().copy()
+    df['similarity'] = distances.detach().numpy().copy()
     return df.iloc[idx.numpy()]
 
 def most_similar_users(username, n=10):
@@ -72,10 +71,12 @@ def get_game_preds(game):
 
 
 def table():
-    cols = ['thumbnail','url','name','usersrated','average', 'bayesaverage', 'averageweight']
+    cols = ['thumbnail','url','name','usersrated','average', 'bayesaverage', 'averageweight', 'tag']
     # 'model_score','distance'
-    return df_games[cols]
-    # result = result[['thumbnail','primary','usersrated','bayesaverage','average','model_score','distance','id']].copy()
+    df =  df_games[cols]
+    
+    return df
+    # return df[['thumbnail','primary','usersrated','bayesaverage','average','model_score','distance','id', 'tag']].copy()
 
 
     
@@ -84,5 +85,6 @@ modelstandard = load_pickle('./input/size30model.pickle')
 modeltransform = load_pickle('./input/size30modeltransform.pickle')
 users = load_pickle('./input/userids.pickle')
 games = load_pickle('./input/gameids.pickle')
-
+boardgamemechanic = load_pickle('./input/boardgamemechanic.pickle')
+boardgamecategory = load_pickle('./input/boardgamecategory.pickle')
 df_games = pd.read_csv('./input/games_detailed_info_incl_modelid.csv')
