@@ -15,7 +15,7 @@ st.set_page_config(
    page_icon="🎈",
 )
 
-@st.experimental_singleton
+@st.experimental_memo(ttl=24*60*60)
 def load_inputs():
      model.modelstandard = load_pickle('./input/size30model.pickle')
      model.modeltransform = load_pickle('./input/size30modeltransform.pickle')
@@ -23,12 +23,10 @@ def load_inputs():
      model.games = load_pickle('./input/gameids.pickle')
      model.boardgamemechanic = load_pickle('./input/boardgamemechanic.pickle')
      model.boardgamecategory = load_pickle('./input/boardgamecategory.pickle')
-
      model.df = model.table()
 load_inputs()
 
-
-@st.experimental_memo
+@st.experimental_memo(ttl=24*60*60)
 def getgames(game):
      return model.most_similar_games(game)
 
