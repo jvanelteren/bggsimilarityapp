@@ -10,11 +10,6 @@ pd.options.display.max_rows = 20
 pd.options.display.float_format = "{:,.1f}".format
 pd.options.mode.chained_assignment = None
 
-st.set_page_config(
-   page_title="BoardGame Explorer",
-   page_icon="🎈",
-)
-
 @st.experimental_memo(ttl=24*60*60)
 def load_inputs():
      model.modelstandard = load_pickle('./input/size30model.pickle')
@@ -24,8 +19,7 @@ def load_inputs():
      model.boardgamemechanic = load_pickle('./input/boardgamemechanic.pickle')
      model.boardgamecategory = load_pickle('./input/boardgamecategory.pickle')
      model.df = model.table()
-load_inputs()
-
+     
 @st.experimental_memo(ttl=24*60*60)
 def getgames(game):
      return model.most_similar_games(game)
@@ -41,8 +35,9 @@ def modelupdate():
      elif st.session_state['model'] == 'experimental':
           model.m = model.modeltransform
      update()
+     
 # Initialisation of session state
-def reset(clear_cache=False):
+def init(clear_cache=False):
      if clear_cache:
           for key in st.session_state.keys():
                if key != 'selected_game':
@@ -55,8 +50,6 @@ def reset(clear_cache=False):
           </style>
           """
      st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
-     
-               
      st.session_state.setdefault('selected_game', 'Chess')
      st.session_state.setdefault('minvotes', 500)
      st.session_state.setdefault('minaverage', 0)
@@ -139,7 +132,14 @@ img_thumbnail_desktop = JsCode("""function (params) {
 
      # element.appendChild(document.createTextNode(params.value));
 
-reset()
+st.set_page_config(
+   page_title="BoardGame Explorer",
+   page_icon="🎈",
+)
+
+load_inputs()
+init()
+
 # Sidebar filters
 st.sidebar.header('App version')
 analysis_type = st.sidebar.radio("Analysis",['similarity', 'user predictions'],)
@@ -154,34 +154,27 @@ st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.
 st.sidebar.multiselect('Excluding all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_excl')
 st.sidebar.radio("Amount of results",[10, 50,22000], key='amountresults', on_change=update, help='Select 22000 if you want to return all of the games')
 st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate, help='In the experimental model the ratings are transformed before training: (rating ** 2)/10, to account for the nonlinearity of the 1-10 scale. Since the difference between a 7 or an 8 is much larger than the difference between a 3 and a 4.')
-
 if st.sidebar.button('Reset selections'):
-     reset(clear_cache=True)
+     init(clear_cache=True)
      st.experimental_rerun()
-
 
 
 st.title('BoardGame Explorer')
 if analysis_type == 'similarity':
      placeholder = st.empty()
-
      
      df = filter(getgames(st.session_state['selected_game']))
-
-     
      rowsperpage = 50
      grid_height= 100 * min(len(df), rowsperpage) + 80
-
+     
      if mobile == 'mobile':
           image_thumbnail = img_thumbnail_mobile
           thumb_width = 100
-          
           gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'thumbnail']])
           gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
           gb.configure_grid_options(rowHeight=100, pagination=True)
           gb.configure_column("url", wrapText=True, headerName='Name', cellRenderer=link_jscode)
           gb.configure_column('average', maxWidth=100, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
-          
      else:
           image_thumbnail = img_thumbnail_desktop
           thumb_width = 130
@@ -195,7 +188,6 @@ if analysis_type == 'similarity':
           gb.configure_column('bayesaverage', headerName='GeekRating', valueFormatter="data.bayesaverage.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
           gb.configure_column('averageweight', headerName='Weight', valueFormatter="data.averageweight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})")
      
-     # gb.configure_column('nameyear', hide=True,suppressToolPanel=True)
      gb.configure_selection(selection_mode="single", use_checkbox=False)
      gb.configure_column('thumbnail', headerName='', minWidth=thumb_width, cellRenderer=image_thumbnail, initialPinned='left')     
      gridOptions = gb.build()
@@ -212,9 +204,9 @@ if analysis_type == 'similarity':
                st.session_state['selected_game'] = grid_response['selected_rows'][0]['name']
                st.experimental_rerun()
 
-     placeholder.selectbox(label="This app is designed to find similar games. You may find games you didn't know but will love 😍 even more!", options=model.df.sort_values('usersrated', ascending=False)['name'], key='selected_game')
+     placeholder.selectbox(label="This app is designed to find similar games. You might find games you didn't know but love 😍 even more!", options=model.df.sort_values('usersrated', ascending=False)['name'], key='selected_game')
+     
      with st.expander("🔎  Click for explanation"):
-          
           st.write("""
           This recommender model uses a technique called 'collaborative filtering', which is similar to how Netflix recommends your next serie.
           A great explanation about the pro's and con's can be found [here](https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1740-9713.2019.01317.x)         
@@ -222,9 +214,9 @@ if analysis_type == 'similarity':
           The results are sorted by similarity with the selected game, which means that the game you selected comes on top.
           Other stats are:
           
-          ▶ Average: the average rating the game received
+          ▶ Avg: the average rating the game received
           
-          ▶ Geekrating: the BGG GeekRating, which penalizes game with few ratings
+          ▶ GeekRating: the BGG GeekRating, which penalizes game with few ratings
           
           ▶ # Ratings: the amount of times a game has been rated
           
@@ -234,15 +226,11 @@ if analysis_type == 'similarity':
           
           👉Click on the column names to sort. 
           
-          👉Click the game name to go to the game on BoardGameGeek. 
+          👉(on mobile) Click arrow top left to expand options menu
           
           """)
-     
-     
 
 elif analysis_type == 'user predictions':
-
-     # Some space for experimenting with User preds
 
      user = st.text_input('Enter your BoardGameGeek user name to get your predictions')
      if user:
