@@ -10,7 +10,7 @@ def most_similar_games(gamename):
     gameidx = games.o2i[gamename]
     distances = nn.CosineSimilarity(dim=1)(m.game_factors, m.game_factors[gameidx][None])
     idx = distances.argsort(descending=True)
-    df = table()
+
     df['similarity'] = distances.detach().numpy().copy()
     return df.iloc[idx.numpy()]
 
@@ -49,7 +49,10 @@ def get_user_preds(user):
 
     preds = ((m.user_factors[user_idx] * m.game_factors).sum(dim=1) + m.game_bias + m.user_bias[user_idx])
     preds = sigmoid_range(preds, 0,11)
-    return preds
+    df['preds'] = preds.detach().numpy().clip(1,10)
+    
+    
+    return df
 
 def get_user_best(user, n=100):
     preds = get_user_preds(user)
@@ -71,6 +74,7 @@ def get_game_preds(game):
 
 
 def table():
+    df_games = pd.read_csv('./input/games_detailed_info_incl_modelid.csv')
     cols = ['thumbnail','url','name','usersrated','average', 'bayesaverage', 'averageweight', 'tag']
     # 'model_score','distance'
     df =  df_games[cols]
@@ -87,4 +91,6 @@ users = load_pickle('./input/userids.pickle')
 games = load_pickle('./input/gameids.pickle')
 boardgamemechanic = load_pickle('./input/boardgamemechanic.pickle')
 boardgamecategory = load_pickle('./input/boardgamecategory.pickle')
-df_games = pd.read_csv('./input/games_detailed_info_incl_modelid.csv')
+
+df = table()
+

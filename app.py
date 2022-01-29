@@ -3,10 +3,10 @@ import pandas as pd
 pd.options.display.max_rows = 20
 pd.options.display.float_format = "{:,.1f}".format
 pd.options.mode.chained_assignment = None
-import os
 from dotproductbias import DotProductBias
 import model
 from st_aggrid.shared import GridUpdateMode  
+from st_aggrid import JsCode, GridOptionsBuilder
 
 from st_aggrid import AgGrid
 st.set_page_config(
@@ -50,7 +50,7 @@ def reset(clear_cache=False):
      st.session_state.setdefault('tag_incl', [])
      st.session_state.setdefault('tag_excl', [])
      modelupdate()
-reset()
+
 def filter(df):
      filtered_df = df.loc[(df['usersrated'] >= st.session_state['minvotes']) &
                           (df['average'] >= st.session_state['minaverage']) &
@@ -70,37 +70,6 @@ def filter(df):
      # filtered_df =  filtered_df.sort_values('similarity', ascending=False)
      return filtered_df
 
-# Sidebar filters
-st.sidebar.header('Options')
-mobile = st.sidebar.radio("App version",['mobile', 'desktop'],)
-st.sidebar.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
-st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update)
-st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
-st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f")
-st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_incl')
-st.sidebar.multiselect('Excluding all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_excl')
-st.sidebar.radio("Amount of results",[10, 50,22000], key='amountresults', on_change=update)
-st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate)
-
-st.write('<style>div.row-widget.stExpander > div{align:right;}</style>', unsafe_allow_html=True)
-
-st.title('BoardGame Explorer')
-
-placeholder = st.empty()
-
-df = filter(model.most_similar_games(st.session_state['selected_game']))
-
-# import seaborn as sns
-# cm = sns.light_palette("green", as_cmap=True)
-# st.dataframe(df.style.background_gradient(cmap=cm))
-
-if st.sidebar.button('Reset selections'):
-     reset(clear_cache=True)
-     st.experimental_rerun()
- 
-from st_aggrid import JsCode, GridOptionsBuilder
-
-
 link_jscode = JsCode("""
   function(params) {
   	var element = document.createElement("span");
@@ -115,30 +84,72 @@ link_jscode = JsCode("""
   	return element;
   };
   """)
+img_thumbnail_mobile = JsCode("""function (params) {
+     var element = document.createElement("span");
+     var imageElement = document.createElement("img");
+
+     if (params.data.thumbnail) {
+          imageElement.src = params.data.thumbnail;
+          imageElement.width="100";
+     } else {
+          imageElement.src = "";
+     }
+     element.appendChild(imageElement);
+     return element;
+     }""")
+
+     # element.appendChild(document.createTextNode(params.value));
+img_thumbnail_desktop = JsCode("""function (params) {
+     var element = document.createElement("span");
+     var imageElement = document.createElement("img");
+
+     if (params.data.thumbnail) {
+          imageElement.src = params.data.thumbnail;
+          imageElement.width="120";
+     } else {
+          imageElement.src = "";
+     }
+     element.appendChild(imageElement);
+     return element;
+     }""")
+
+     # element.appendChild(document.createTextNode(params.value));
+
+reset()
+# Sidebar filters
+st.sidebar.header('Options')
+mobile = st.sidebar.radio("App version",['mobile', 'desktop'],)
+analysis_type = st.sidebar.radio("Analysis",['Similarity', 'User predictions'],)
+st.sidebar.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
+st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update)
+st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
+st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f")
+st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_incl')
+st.sidebar.multiselect('Excluding all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_excl')
+st.sidebar.radio("Amount of results",[10, 50,22000], key='amountresults', on_change=update)
+st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate)
+
+
+
+
+st.title('BoardGame Explorer')
+placeholder = st.empty()
+df = filter(model.most_similar_games(st.session_state['selected_game']))
+
+if st.sidebar.button('Reset selections'):
+     reset(clear_cache=True)
+     st.experimental_rerun()
+ 
 rowsperpage = 50
 grid_height= 100 * min(len(df), rowsperpage) + 80
 
 if mobile == 'mobile':
-     image_nation = JsCode("""function (params) {
-          var element = document.createElement("span");
-          var imageElement = document.createElement("img");
-     
-          if (params.data.thumbnail) {
-               imageElement.src = params.data.thumbnail;
-               imageElement.width="100";
-          } else {
-               imageElement.src = "";
-          }
-          element.appendChild(imageElement);
-          element.appendChild(document.createTextNode(params.value));
-          return element;
-          }""")
+     image_thumbnail = img_thumbnail_mobile
      gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'thumbnail', 'name']])
-
      df[' ']= ' '
      gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
      gb.configure_grid_options(rowHeight=100, pagination=True)
-     gb.configure_column(' ', minWidth=100, cellRenderer=image_nation, initialPinned='left')
+     gb.configure_column(' ', minWidth=100, cellRenderer=image_thumbnail, initialPinned='left')
      gb.configure_column("url", headerName='Name', cellRenderer=link_jscode)
      gb.configure_column('average', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
      gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
@@ -147,26 +158,12 @@ if mobile == 'mobile':
      # df = df[[' ', 'url', 'average','thumbnail', 'name']]
      
 else:
-     image_nation = JsCode("""function (params) {
-          var element = document.createElement("span");
-          var imageElement = document.createElement("img");
-     
-          if (params.data.thumbnail) {
-               imageElement.src = params.data.thumbnail;
-               imageElement.width="120";
-          } else {
-               imageElement.src = "";
-          }
-          element.appendChild(imageElement);
-          element.appendChild(document.createTextNode(params.value));
-          return element;
-          }""")
-     gb = GridOptionsBuilder.from_dataframe(df.drop('tag', axis=1))
-     
+     image_thumbnail = img_thumbnail_desktop
+     gb = GridOptionsBuilder.from_dataframe(df.drop('tag', axis=1))  
      df[' ']= ' '
      gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
      gb.configure_grid_options(rowHeight=100, pagination=True)
-     gb.configure_column(' ', minWidth=130, cellRenderer=image_nation, initialPinned='left')
+     gb.configure_column(' ', minWidth=130, cellRenderer=image_thumbnail, initialPinned='left')
      gb.configure_column("url", minWidth=120, headerName='Name', cellRenderer=link_jscode)
      gb.configure_column("usersrated", headerName='# Ratings', maxwidth=80)
      gb.configure_column('similarity', headerName='Similarity', valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})", sort='desc')
@@ -191,7 +188,7 @@ if grid_response['selected_rows']:
           st.session_state['selected_game'] = grid_response['selected_rows'][0]['name']
           st.experimental_rerun()
 
-placeholder.selectbox(label="This app is designed to find similar games. You may find games you didn't know but will love 😍 even more!", options=model.df_games.sort_values('usersrated', ascending=False)['name'], key='selected_game')
+placeholder.selectbox(label="This app is designed to find similar games. You may find games you didn't know but will love 😍 even more!", options=model.df.sort_values('usersrated', ascending=False)['name'], key='selected_game')
 with st.expander("🔎  Click for explanation"):
      
      st.write("""
@@ -231,3 +228,37 @@ with st.expander("⚙️ Thanks & feedback ", expanded=False):
           [![License: Creative Commons Naamsvermelding-GelijkDelen 4.0 Internationaal-licentie](https://i.creativecommons.org/l/by-sa/4.0/80x15.png)](https://creativecommons.org/licenses/by-sa/3.0/) 2022 Jesse van Elteren
                """
      )
+
+
+# Some space for experimenting with User preds
+
+def get_user_preds():
+     user_scores = model.get_user_preds(user)
+
+     rowsperpage = 50
+     grid_height= 100 * min(len(df), rowsperpage) + 80
+     image_thumbnail = img_thumbnail_mobile
+     gb = GridOptionsBuilder.from_dataframe(user_scores[['url', 'average', 'thumbnail', 'name', 'preds']])
+     df[' ']= ' '
+     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
+     gb.configure_grid_options(rowHeight=100, pagination=True)
+     gb.configure_column(' ', minWidth=100, cellRenderer=image_thumbnail, initialPinned='left')
+     gb.configure_column("url", headerName='Name', cellRenderer=link_jscode)
+     gb.configure_column('average', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
+     gb.configure_column('preds', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
+     gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
+     gb.configure_column('name', hide=True,suppressToolPanel=True)
+     gb.configure_column('preds', headerName='Predict', valueFormatter="data.preds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})", sort='desc')
+
+
+     gridOptions = gb.build()
+     user_scoreag = AgGrid(
+          user_scores,
+          gridOptions=gridOptions,
+          update_mode=GridUpdateMode.NO_UPDATE,
+          height=grid_height,
+          fit_columns_on_grid_load=True,
+          allow_unsafe_jscode=True)
+user = st.text_input('enter user name')
+if user:
+     get_user_preds()
