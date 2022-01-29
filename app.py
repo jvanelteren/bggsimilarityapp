@@ -32,7 +32,8 @@ def modelupdate():
 def reset(clear_cache=False):
      if clear_cache:
           for key in st.session_state.keys():
-               del st.session_state[key]
+               if key != 'selected_game':
+                    del st.session_state[key]
                
      hide_streamlit_style = """
           <style>
@@ -127,20 +128,19 @@ st.sidebar.header('App version')
 analysis_type = st.sidebar.radio("Analysis",['similarity', 'user predictions'],)
 mobile = st.sidebar.radio("Display",['mobile', 'desktop'],)
 st.sidebar.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
-if mobile =='desktop':
-     st.sidebar.header('Options')
-     st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
-     st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update, help='The rating of games with few ratings is less reliable')
-     st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f", help='The weight is a measure for complexity & depth, 1=Very light games, 5=Very heavy games. Here you can select ligher or heavier games.')
-     st.sidebar.select_slider("Maximum year of publication",['No filter', *list(range(2015, 2024))], key='year', on_change=update, help='You can use this to filter out newer games which often have hyped ratings')
-     st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_incl', help="BoardGameGeek has a boardgame category and mechanic. I've combined them into 'tags'")
-     st.sidebar.multiselect('Excluding all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_excl')
-     st.sidebar.radio("Amount of results",[10, 50,22000], key='amountresults', on_change=update, help='Select 22000 if you want to return all of the games')
-     st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate, help='In the experimental model the ratings are transformed before training: (rating ** 2)/10, to account for the nonlinearity of the 1-10 scale. Since the difference between a 7 or an 8 is much larger than the difference between a 3 and a 4.')
+st.sidebar.header('Options')
+st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
+st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update, help='The rating of games with few ratings is less reliable')
+st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f", help='The weight is a measure for complexity & depth, 1=Very light games, 5=Very heavy games. Here you can select ligher or heavier games.')
+st.sidebar.select_slider("Maximum year of publication",['No filter', *list(range(2015, 2024))], key='year', on_change=update, help='You can use this to filter out newer games which often have hyped ratings')
+st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_incl', help="BoardGameGeek has a boardgame category and mechanic. I've combined them into 'tags'")
+st.sidebar.multiselect('Excluding all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_excl')
+st.sidebar.radio("Amount of results",[10, 50,22000], key='amountresults', on_change=update, help='Select 22000 if you want to return all of the games')
+st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate, help='In the experimental model the ratings are transformed before training: (rating ** 2)/10, to account for the nonlinearity of the 1-10 scale. Since the difference between a 7 or an 8 is much larger than the difference between a 3 and a 4.')
 
-     if st.sidebar.button('Reset selections'):
-          reset(clear_cache=True)
-          st.experimental_rerun()
+if st.sidebar.button('Reset selections'):
+     reset(clear_cache=True)
+     st.experimental_rerun()
 
 
 
@@ -163,7 +163,7 @@ if analysis_type == 'similarity':
           gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
           gb.configure_grid_options(rowHeight=100, pagination=True)
           gb.configure_column("url", wrapText=True, headerName='Name', cellRenderer=link_jscode)
-          gb.configure_column('average', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
+          gb.configure_column('average', maxWidth=100, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
           
      else:
           image_thumbnail = img_thumbnail_desktop
@@ -240,7 +240,7 @@ elif analysis_type == 'user predictions':
                     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
                     gb.configure_grid_options(rowHeight=100, pagination=True)
                     gb.configure_column("url", wrapText=True, headerName='Name', cellRenderer=link_jscode)
-                    gb.configure_column('preds', headerName='Predict', valueFormatter="data.preds.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})", sort='desc')
+                    gb.configure_column('preds', headerName='Predict', maxWidth=100, valueFormatter="data.preds.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})", sort='desc')
                else:
                     image_thumbnail = img_thumbnail_desktop
                     thumb_width = 130
