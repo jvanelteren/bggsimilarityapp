@@ -87,12 +87,3 @@ def table():
 
     
 
-modelstandard = load_pickle('./input/size30model.pickle')
-modeltransform = load_pickle('./input/size30modeltransform.pickle')
-users = load_pickle('./input/userids.pickle')
-games = load_pickle('./input/gameids.pickle')
-boardgamemechanic = load_pickle('./input/boardgamemechanic.pickle')
-boardgamecategory = load_pickle('./input/boardgamecategory.pickle')
-
-df = table()
-

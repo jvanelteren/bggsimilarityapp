@@ -1,18 +1,33 @@
 import streamlit as st
 import pandas as pd
+from fastai.tabular.all import load_pickle
+from dotproductbias import DotProductBias
+import model
+from st_aggrid import JsCode, GridOptionsBuilder, AgGrid
+from st_aggrid.shared import GridUpdateMode  
+
 pd.options.display.max_rows = 20
 pd.options.display.float_format = "{:,.1f}".format
 pd.options.mode.chained_assignment = None
-from dotproductbias import DotProductBias
-import model
-from st_aggrid.shared import GridUpdateMode  
-from st_aggrid import JsCode, GridOptionsBuilder
 
-from st_aggrid import AgGrid
 st.set_page_config(
    page_title="BoardGame Explorer",
    page_icon="🎈",
 )
+
+@st.experimental_singleton
+def load_inputs():
+     model.modelstandard = load_pickle('./input/size30model.pickle')
+     model.modeltransform = load_pickle('./input/size30modeltransform.pickle')
+     model.users = load_pickle('./input/userids.pickle')
+     model.games = load_pickle('./input/gameids.pickle')
+     model.boardgamemechanic = load_pickle('./input/boardgamemechanic.pickle')
+     model.boardgamecategory = load_pickle('./input/boardgamecategory.pickle')
+
+     model.df = model.table()
+load_inputs()
+
+
 @st.experimental_memo
 def getgames(game):
      return model.most_similar_games(game)
