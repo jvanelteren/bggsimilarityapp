@@ -13,7 +13,9 @@ st.set_page_config(
    page_title="BoardGame Explorer",
    page_icon="🎈",
 )
-
+@st.experimental_memo
+def getgames(game):
+     return model.most_similar_games(game)
 
 def update():
      # refreshes table when filters are changed
@@ -125,27 +127,30 @@ st.sidebar.header('App version')
 analysis_type = st.sidebar.radio("Analysis",['similarity', 'user predictions'],)
 mobile = st.sidebar.radio("Display",['mobile', 'desktop'],)
 st.sidebar.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
-st.sidebar.header('Options')
-st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
-st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update, help='The rating of games with few ratings is not very reliable yet')
-st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f", help='The weight is a measure for complexity & depth, 1=Very light games, 5=Very heavy games. Here you can select ligher or heavier games.')
-st.sidebar.select_slider("Maximum year of publication",['No filter', *list(range(2015, 2024))], key='year', on_change=update, help='You can use this to filter out newer games which often have hyped ratings')
-st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_incl', help="BoardGameGeek has a boardgame category and mechanic. I've turned them into 'tags'")
-st.sidebar.multiselect('Excluding all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_excl')
-st.sidebar.radio("Amount of results",[10, 50,22000], key='amountresults', on_change=update, help='Select 22000 if you want to return all of the games')
-st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate, help='In the experimental model the ratings where transformed before training: (rating ** 2)/10, to account for the nonlinearity of the 1-10 scale. Since the difference between a 7 or an 8 is much larger than the difference between a 3 and a 4.')
+if mobile =='desktop':
+     st.sidebar.header('Options')
+     st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
+     st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update, help='The rating of games with few ratings is less reliable')
+     st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f", help='The weight is a measure for complexity & depth, 1=Very light games, 5=Very heavy games. Here you can select ligher or heavier games.')
+     st.sidebar.select_slider("Maximum year of publication",['No filter', *list(range(2015, 2024))], key='year', on_change=update, help='You can use this to filter out newer games which often have hyped ratings')
+     st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_incl', help="BoardGameGeek has a boardgame category and mechanic. I've combined them into 'tags'")
+     st.sidebar.multiselect('Excluding all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_excl')
+     st.sidebar.radio("Amount of results",[10, 50,22000], key='amountresults', on_change=update, help='Select 22000 if you want to return all of the games')
+     st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate, help='In the experimental model the ratings are transformed before training: (rating ** 2)/10, to account for the nonlinearity of the 1-10 scale. Since the difference between a 7 or an 8 is much larger than the difference between a 3 and a 4.')
 
+     if st.sidebar.button('Reset selections'):
+          reset(clear_cache=True)
+          st.experimental_rerun()
 
 
 
 st.title('BoardGame Explorer')
 if analysis_type == 'similarity':
      placeholder = st.empty()
-     df = filter(model.most_similar_games(st.session_state['selected_game']))
 
-     if st.sidebar.button('Reset selections'):
-          reset(clear_cache=True)
-          st.experimental_rerun()
+     
+     df = filter(getgames(st.session_state['selected_game']))
+
      
      rowsperpage = 50
      grid_height= 100 * min(len(df), rowsperpage) + 80
@@ -153,6 +158,7 @@ if analysis_type == 'similarity':
      if mobile == 'mobile':
           image_thumbnail = img_thumbnail_mobile
           thumb_width = 100
+          
           gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'nameyear', 'thumbnail']])
           gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
           gb.configure_grid_options(rowHeight=100, pagination=True)
