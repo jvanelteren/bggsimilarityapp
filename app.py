@@ -81,9 +81,13 @@ link_jscode = JsCode("""
   function(params) {
   	var element = document.createElement("span");
   	var linkElement = document.createElement("a");
-  	var linkText = document.createTextNode(params.data.nameyear);
+  	var linkText = document.createTextNode(params.data.name);
+  	var br = document.createElement("br");
+  	var linkYear = document.createTextNode('('+params.data.yearpublished+')');
   	link_url = params.value;
   	linkElement.appendChild(linkText);
+  	linkElement.appendChild(br);
+  	linkElement.appendChild(linkYear);
   	linkText.title = params.value;
   	linkElement.href = link_url;
   	linkElement.target = "_blank";
@@ -159,7 +163,7 @@ if analysis_type == 'similarity':
           image_thumbnail = img_thumbnail_mobile
           thumb_width = 100
           
-          gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'nameyear', 'thumbnail']])
+          gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'thumbnail']])
           gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
           gb.configure_grid_options(rowHeight=100, pagination=True)
           gb.configure_column("url", wrapText=True, headerName='Name', cellRenderer=link_jscode)
@@ -168,7 +172,7 @@ if analysis_type == 'similarity':
      else:
           image_thumbnail = img_thumbnail_desktop
           thumb_width = 130
-          gb = GridOptionsBuilder.from_dataframe(df[['url', 'similarity', 'average', 'bayesaverage', 'usersrated', 'averageweight', 'nameyear', 'thumbnail']])  
+          gb = GridOptionsBuilder.from_dataframe(df[['url', 'similarity', 'average', 'bayesaverage', 'usersrated', 'averageweight', 'thumbnail']])  
           gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
           gb.configure_grid_options(rowHeight=100, pagination=True)
           gb.configure_column("url", wrapText=True, minWidth=120, headerName='Name', cellRenderer=link_jscode)
@@ -178,7 +182,7 @@ if analysis_type == 'similarity':
           gb.configure_column('bayesaverage', headerName='GeekRating', valueFormatter="data.bayesaverage.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
           gb.configure_column('averageweight', headerName='Weight', valueFormatter="data.averageweight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})")
      
-     gb.configure_column('nameyear', hide=True,suppressToolPanel=True)
+     # gb.configure_column('nameyear', hide=True,suppressToolPanel=True)
      gb.configure_selection(selection_mode="single", use_checkbox=False)
      gb.configure_column('thumbnail', headerName='', minWidth=thumb_width, cellRenderer=image_thumbnail, initialPinned='left')     
      gridOptions = gb.build()
@@ -236,7 +240,7 @@ elif analysis_type == 'user predictions':
                if mobile == 'mobile':
                     image_thumbnail = img_thumbnail_mobile
                     thumb_width = 100
-                    gb = GridOptionsBuilder.from_dataframe(user_scores[['thumbnail', 'url', 'nameyear', 'preds']])
+                    gb = GridOptionsBuilder.from_dataframe(user_scores[['thumbnail', 'url', 'preds']])
                     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
                     gb.configure_grid_options(rowHeight=100, pagination=True)
                     gb.configure_column("url", wrapText=True, headerName='Name', cellRenderer=link_jscode)
@@ -244,7 +248,7 @@ elif analysis_type == 'user predictions':
                else:
                     image_thumbnail = img_thumbnail_desktop
                     thumb_width = 130
-                    gb = GridOptionsBuilder.from_dataframe(user_scores[['url', 'preds', 'average', 'bayesaverage', 'usersrated', 'averageweight', 'nameyear', 'thumbnail']])
+                    gb = GridOptionsBuilder.from_dataframe(user_scores[['url', 'preds', 'average', 'bayesaverage', 'usersrated', 'averageweight', 'thumbnail']])
                     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
                     gb.configure_grid_options(rowHeight=100, pagination=True)
                     gb.configure_column("url", wrapText=True, minWidth=120, headerName='Name', cellRenderer=link_jscode)
@@ -252,9 +256,9 @@ elif analysis_type == 'user predictions':
                     gb.configure_column('preds', headerName='Predict', valueFormatter="data.preds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})", sort='desc')
                     gb.configure_column('average', headerName='Average', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})")
                     gb.configure_column('bayesaverage', headerName='GeekRating', valueFormatter="data.bayesaverage.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
-                    gb.configure_column('averageweight', headerName='Weight', valueFormatter="data.averageweight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})")
+                    gb.configure_column('averageweight', headerName='Weight', valueFormatter="data.averageweight.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
 
-               gb.configure_column('nameyear', hide=True,suppressToolPanel=True)
+               # gb.configure_column('nameyear', hide=True,suppressToolPanel=True)
                gb.configure_column('thumbnail', headerName='', minWidth=thumb_width, cellRenderer=image_thumbnail, initialPinned='left')
                gridOptions = gb.build()
                user_scoreag = AgGrid(
