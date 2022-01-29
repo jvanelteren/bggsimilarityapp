@@ -117,10 +117,11 @@ img_thumbnail_desktop = JsCode("""function (params) {
 
 reset()
 # Sidebar filters
-st.sidebar.header('Options')
-mobile = st.sidebar.radio("App version",['mobile', 'desktop'],)
-analysis_type = st.sidebar.radio("Analysis",['Similarity', 'User predictions'],)
+st.sidebar.header('App version')
+analysis_type = st.sidebar.radio("Analysis",['similarity', 'user predictions'],)
+mobile = st.sidebar.radio("Display",['mobile', 'desktop'],)
 st.sidebar.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
+st.sidebar.header('Options')
 st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update)
 st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
 st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f")
@@ -133,87 +134,125 @@ st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=mo
 
 
 st.title('BoardGame Explorer')
-placeholder = st.empty()
-df = filter(model.most_similar_games(st.session_state['selected_game']))
+if analysis_type == 'similarity':
+     placeholder = st.empty()
+     df = filter(model.most_similar_games(st.session_state['selected_game']))
 
-if st.sidebar.button('Reset selections'):
-     reset(clear_cache=True)
-     st.experimental_rerun()
- 
-rowsperpage = 50
-grid_height= 100 * min(len(df), rowsperpage) + 80
-
-if mobile == 'mobile':
-     image_thumbnail = img_thumbnail_mobile
-     gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'thumbnail', 'name']])
-     df[' ']= ' '
-     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
-     gb.configure_grid_options(rowHeight=100, pagination=True)
-     gb.configure_column(' ', minWidth=100, cellRenderer=image_thumbnail, initialPinned='left')
-     gb.configure_column("url", headerName='Name', cellRenderer=link_jscode)
-     gb.configure_column('average', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
-     gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
-     gb.configure_column('name', hide=True,suppressToolPanel=True)
-     gb.configure_selection(selection_mode="single", use_checkbox=False)
-     # df = df[[' ', 'url', 'average','thumbnail', 'name']]
-     
-else:
-     image_thumbnail = img_thumbnail_desktop
-     gb = GridOptionsBuilder.from_dataframe(df.drop('tag', axis=1))  
-     df[' ']= ' '
-     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
-     gb.configure_grid_options(rowHeight=100, pagination=True)
-     gb.configure_column(' ', minWidth=130, cellRenderer=image_thumbnail, initialPinned='left')
-     gb.configure_column("url", minWidth=120, headerName='Name', cellRenderer=link_jscode)
-     gb.configure_column("usersrated", headerName='# Ratings', maxwidth=80)
-     gb.configure_column('similarity', headerName='Similarity', valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})", sort='desc')
-     gb.configure_column('average', headerName='Average', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})")
-     gb.configure_column('bayesaverage', headerName='GeekRating', valueFormatter="data.bayesaverage.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
-     gb.configure_column('averageweight', headerName='Weight', valueFormatter="data.averageweight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})")
-     gb.configure_column('name', hide=True,suppressToolPanel=True)
-     gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
-     gb.configure_selection(selection_mode="single", use_checkbox=False)
-     
-gridOptions = gb.build()
-grid_response = AgGrid(
-     df,
-     gridOptions=gridOptions,
-     update_mode=GridUpdateMode.SELECTION_CHANGED,
-     height=grid_height,
-     fit_columns_on_grid_load=True,
-     allow_unsafe_jscode=True)
-
-if grid_response['selected_rows']:
-     if grid_response['selected_rows'][0]['name'] != st.session_state['selected_game']:
-          st.session_state['selected_game'] = grid_response['selected_rows'][0]['name']
+     if st.sidebar.button('Reset selections'):
+          reset(clear_cache=True)
           st.experimental_rerun()
+     
+     rowsperpage = 50
+     grid_height= 100 * min(len(df), rowsperpage) + 80
 
-placeholder.selectbox(label="This app is designed to find similar games. You may find games you didn't know but will love 😍 even more!", options=model.df.sort_values('usersrated', ascending=False)['name'], key='selected_game')
-with st.expander("🔎  Click for explanation"):
+     if mobile == 'mobile':
+          image_thumbnail = img_thumbnail_mobile
+          gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'thumbnail', 'name']])
+          df[' ']= ' '
+          gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
+          gb.configure_grid_options(rowHeight=100, pagination=True)
+          gb.configure_column(' ', minWidth=100, cellRenderer=image_thumbnail, initialPinned='left')
+          gb.configure_column("url", headerName='Name', cellRenderer=link_jscode)
+          gb.configure_column('average', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
+          gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
+          gb.configure_column('name', hide=True,suppressToolPanel=True)
+          gb.configure_selection(selection_mode="single", use_checkbox=False)
+          # df = df[[' ', 'url', 'average','thumbnail', 'name']]
+          
+     else:
+          image_thumbnail = img_thumbnail_desktop
+          gb = GridOptionsBuilder.from_dataframe(df.drop('tag', axis=1))  
+          df[' ']= ' '
+          gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
+          gb.configure_grid_options(rowHeight=100, pagination=True)
+          gb.configure_column(' ', minWidth=130, cellRenderer=image_thumbnail, initialPinned='left')
+          gb.configure_column("url", minWidth=120, headerName='Name', cellRenderer=link_jscode)
+          gb.configure_column("usersrated", headerName='# Ratings', maxwidth=80)
+          gb.configure_column('similarity', headerName='Similarity', valueFormatter="data.similarity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})", sort='desc')
+          gb.configure_column('average', headerName='Average', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})")
+          gb.configure_column('bayesaverage', headerName='GeekRating', valueFormatter="data.bayesaverage.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
+          gb.configure_column('averageweight', headerName='Weight', valueFormatter="data.averageweight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})")
+          gb.configure_column('name', hide=True,suppressToolPanel=True)
+          gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
+          gb.configure_selection(selection_mode="single", use_checkbox=False)
+          
+     gridOptions = gb.build()
+     grid_response = AgGrid(
+          df,
+          gridOptions=gridOptions,
+          update_mode=GridUpdateMode.SELECTION_CHANGED,
+          height=grid_height,
+          fit_columns_on_grid_load=True,
+          allow_unsafe_jscode=True)
+
+     if grid_response['selected_rows']:
+          if grid_response['selected_rows'][0]['name'] != st.session_state['selected_game']:
+               st.session_state['selected_game'] = grid_response['selected_rows'][0]['name']
+               st.experimental_rerun()
+
+     placeholder.selectbox(label="This app is designed to find similar games. You may find games you didn't know but will love 😍 even more!", options=model.df.sort_values('usersrated', ascending=False)['name'], key='selected_game')
+     with st.expander("🔎  Click for explanation"):
+          
+          st.write("""
+          This recommender model uses a technique called 'collaborative filtering', which is similar to how Netflix recommends your next serie.
+          A great explanation about the pro's and con's can be found [here](https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1740-9713.2019.01317.x)         
+          
+          The results are sorted by similarity with the selected game, which means that the game you selected comes on top.
+          Other stats are:
+          
+          ▶ Average: the average rating the game received
+          
+          ▶ Geekrating: the BGG GeekRating, which penalizes game with few ratings
+          
+          ▶ # Ratings: the amount of times a game has been rated
+          
+          ▶ Weight: the 'complexity of a game between 1-5
+          
+          👉Click on a row to see results for that game. 
+          
+          👉Click on the column names to sort. 
+          
+          👉Click the game name to go to the game on BoardGameGeek. 
+          
+          """)
      
-     st.write("""
-         This recommender model uses a technique called 'collaborative filtering', which is similar to how Netflix recommends your next serie.
-         A great explanation about the pro's and con's can be found [here](https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1740-9713.2019.01317.x)         
-         
-         The results are sorted by similarity with the selected game, which means that the game you selected comes on top.
-         Other stats are:
-         
-         ▶ Average: the average rating the game received
-        
-         ▶ Geekrating: the BGG GeekRating, which penalizes game with few ratings
-        
-         ▶ # Ratings: the amount of times a game has been rated
-        
-         ▶ Weight: the 'complexity of a game between 1-5
-         
-         👉Click on a row to see results for that game. 
-         
-         👉Click on the column names to sort. 
-         
-         👉Click the game name to go to the game on BoardGameGeek. 
-         
-     """)
      
+
+elif analysis_type == 'user predictions':
+
+     # Some space for experimenting with User preds
+
+     user = st.text_input('Enter your BoardGameGeek user name to get your predictions')
+     if user:
+          if user in model.users:
+               user_scores = filter(model.get_user_preds(user))
+               st.write(len(user_scores))
+               rowsperpage = 50
+               grid_height= 100 * min(len(user_scores), rowsperpage) + 80
+               image_thumbnail = img_thumbnail_mobile
+               gb = GridOptionsBuilder.from_dataframe(user_scores[['url', 'average', 'thumbnail', 'name', 'preds']])
+               user_scores[' ']= ' '
+               gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
+               gb.configure_grid_options(rowHeight=100, pagination=True)
+               gb.configure_column(' ', minWidth=100, cellRenderer=image_thumbnail, initialPinned='left')
+               gb.configure_column("url", headerName='Name', cellRenderer=link_jscode)
+               gb.configure_column('average', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
+               gb.configure_column('preds', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
+               gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
+               gb.configure_column('name', hide=True,suppressToolPanel=True)
+               gb.configure_column('preds', headerName='Predict', valueFormatter="data.preds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})", sort='desc')
+
+
+               gridOptions = gb.build()
+               user_scoreag = AgGrid(
+                    user_scores,
+                    gridOptions=gridOptions,
+                    update_mode=GridUpdateMode.NO_UPDATE,
+                    height=grid_height,
+                    fit_columns_on_grid_load=True,
+                    allow_unsafe_jscode=True)
+          else:
+               st.write('Sumbit a BGG username that rated at least 10 games beginning of 2022')
      
 with st.expander("⚙️ Thanks & feedback ", expanded=False):
      st.markdown(
@@ -228,37 +267,3 @@ with st.expander("⚙️ Thanks & feedback ", expanded=False):
           [![License: Creative Commons Naamsvermelding-GelijkDelen 4.0 Internationaal-licentie](https://i.creativecommons.org/l/by-sa/4.0/80x15.png)](https://creativecommons.org/licenses/by-sa/3.0/) 2022 Jesse van Elteren
                """
      )
-
-
-# Some space for experimenting with User preds
-
-def get_user_preds():
-     user_scores = model.get_user_preds(user)
-
-     rowsperpage = 50
-     grid_height= 100 * min(len(df), rowsperpage) + 80
-     image_thumbnail = img_thumbnail_mobile
-     gb = GridOptionsBuilder.from_dataframe(user_scores[['url', 'average', 'thumbnail', 'name', 'preds']])
-     df[' ']= ' '
-     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
-     gb.configure_grid_options(rowHeight=100, pagination=True)
-     gb.configure_column(' ', minWidth=100, cellRenderer=image_thumbnail, initialPinned='left')
-     gb.configure_column("url", headerName='Name', cellRenderer=link_jscode)
-     gb.configure_column('average', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
-     gb.configure_column('preds', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
-     gb.configure_column('thumbnail', hide=True,suppressToolPanel=True)
-     gb.configure_column('name', hide=True,suppressToolPanel=True)
-     gb.configure_column('preds', headerName='Predict', valueFormatter="data.preds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})", sort='desc')
-
-
-     gridOptions = gb.build()
-     user_scoreag = AgGrid(
-          user_scores,
-          gridOptions=gridOptions,
-          update_mode=GridUpdateMode.NO_UPDATE,
-          height=grid_height,
-          fit_columns_on_grid_load=True,
-          allow_unsafe_jscode=True)
-user = st.text_input('enter user name')
-if user:
-     get_user_preds()

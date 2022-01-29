@@ -10,9 +10,9 @@ def most_similar_games(gamename):
     gameidx = games.o2i[gamename]
     distances = nn.CosineSimilarity(dim=1)(m.game_factors, m.game_factors[gameidx][None])
     idx = distances.argsort(descending=True)
-
-    df['similarity'] = distances.detach().numpy().copy()
-    return df.iloc[idx.numpy()]
+    gamesdf = df.copy()
+    gamesdf['similarity'] = distances.detach().numpy().copy()
+    return gamesdf.iloc[idx.numpy()]
 
 def most_similar_users(username, n=10):
     idx = users.o2i[username]
@@ -49,10 +49,12 @@ def get_user_preds(user):
 
     preds = ((m.user_factors[user_idx] * m.game_factors).sum(dim=1) + m.game_bias + m.user_bias[user_idx])
     preds = sigmoid_range(preds, 0,11)
-    df['preds'] = preds.detach().numpy().clip(1,10)
+    user_preds = df.copy()
+    user_preds['preds'] = preds.detach().numpy().clip(1,10)
+    user_preds.sort_values('preds', ascending=False, inplace=True)
     
     
-    return df
+    return user_preds
 
 def get_user_best(user, n=100):
     preds = get_user_preds(user)
