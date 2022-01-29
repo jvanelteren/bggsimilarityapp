@@ -225,12 +225,11 @@ elif analysis_type == 'user predictions':
                if mobile == 'mobile':
                     image_thumbnail = img_thumbnail_mobile
                     thumb_width = 100
-                    gb = GridOptionsBuilder.from_dataframe(user_scores[['thumbnail', 'url', 'average', 'name', 'preds']])
+                    gb = GridOptionsBuilder.from_dataframe(user_scores[['thumbnail', 'url', 'name', 'preds']])
                     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
                     gb.configure_grid_options(rowHeight=100, pagination=True)
                     gb.configure_column("url", wrapText=True, headerName='Name', cellRenderer=link_jscode)
-                    gb.configure_column('average', maxWidth=90, headerName='Rating', valueFormatter="data.average.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})")
-                    gb.configure_column('preds', headerName='Predict', valueFormatter="data.preds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})", sort='desc')
+                    gb.configure_column('preds', headerName='Predict', valueFormatter="data.preds.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})", sort='desc')
                else:
                     image_thumbnail = img_thumbnail_desktop
                     thumb_width = 130
