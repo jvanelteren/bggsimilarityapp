@@ -77,7 +77,7 @@ def get_game_preds(game):
 
 def table():
     df_games = pd.read_csv('./input/games_detailed_info_incl_modelid.csv')
-    cols = ['thumbnail','url','name','usersrated','average', 'bayesaverage', 'averageweight', 'tag']
+    cols = ['thumbnail','url','name','usersrated','average', 'bayesaverage', 'averageweight', 'tag', 'nameyear', 'yearpublished']
     # 'model_score','distance'
     df =  df_games[cols]
     

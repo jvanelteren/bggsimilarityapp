@@ -58,6 +58,10 @@ def filter(df):
                           (df['averageweight'] <= st.session_state['weight'][1])
                           
                           ][:st.session_state['amountresults']]
+
+     if 'year' in st.session_state and st.session_state['year'] != 'No filter':
+          filtered_df = df.loc[(df['yearpublished'] <= int(st.session_state['year']))]
+          
      for tag in st.session_state['tag_incl']:
           filtered_df = filtered_df.loc[filtered_df['tag'].str.contains(tag)]
      if st.session_state['tag_excl']:
@@ -74,7 +78,7 @@ link_jscode = JsCode("""
   function(params) {
   	var element = document.createElement("span");
   	var linkElement = document.createElement("a");
-  	var linkText = document.createTextNode(params.data.name);
+  	var linkText = document.createTextNode(params.data.nameyear);
   	link_url = params.value;
   	linkElement.appendChild(linkText);
   	linkText.title = params.value;
@@ -122,13 +126,14 @@ analysis_type = st.sidebar.radio("Analysis",['similarity', 'user predictions'],)
 mobile = st.sidebar.radio("Display",['mobile', 'desktop'],)
 st.sidebar.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
 st.sidebar.header('Options')
-st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update)
 st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
-st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f")
-st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_incl')
+st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update, help='The rating of games with few ratings is not very reliable yet')
+st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f", help='The weight is a measure for complexity & depth, 1=Very light games, 5=Very heavy games. Here you can select ligher or heavier games.')
+st.sidebar.select_slider("Maximum year of publication",['No filter', *list(range(2015, 2024))], key='year', on_change=update, help='You can use this to filter out newer games which often have hyped ratings')
+st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_incl', help="BoardGameGeek has a boardgame category and mechanic. I've turned them into 'tags'")
 st.sidebar.multiselect('Excluding all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_excl')
-st.sidebar.radio("Amount of results",[10, 50,22000], key='amountresults', on_change=update)
-st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate)
+st.sidebar.radio("Amount of results",[10, 50,22000], key='amountresults', on_change=update, help='Select 22000 if you want to return all of the games')
+st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate, help='In the experimental model the ratings where transformed before training: (rating ** 2)/10, to account for the nonlinearity of the 1-10 scale. Since the difference between a 7 or an 8 is much larger than the difference between a 3 and a 4.')
 
 
 
@@ -148,7 +153,7 @@ if analysis_type == 'similarity':
      if mobile == 'mobile':
           image_thumbnail = img_thumbnail_mobile
           thumb_width = 100
-          gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'name', 'thumbnail']])
+          gb = GridOptionsBuilder.from_dataframe(df[['url', 'average', 'nameyear', 'thumbnail']])
           gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
           gb.configure_grid_options(rowHeight=100, pagination=True)
           gb.configure_column("url", wrapText=True, headerName='Name', cellRenderer=link_jscode)
@@ -157,7 +162,7 @@ if analysis_type == 'similarity':
      else:
           image_thumbnail = img_thumbnail_desktop
           thumb_width = 130
-          gb = GridOptionsBuilder.from_dataframe(df[['url', 'similarity', 'average', 'bayesaverage', 'usersrated', 'averageweight', 'name', 'thumbnail']])  
+          gb = GridOptionsBuilder.from_dataframe(df[['url', 'similarity', 'average', 'bayesaverage', 'usersrated', 'averageweight', 'nameyear', 'thumbnail']])  
           gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
           gb.configure_grid_options(rowHeight=100, pagination=True)
           gb.configure_column("url", wrapText=True, minWidth=120, headerName='Name', cellRenderer=link_jscode)
@@ -167,7 +172,7 @@ if analysis_type == 'similarity':
           gb.configure_column('bayesaverage', headerName='GeekRating', valueFormatter="data.bayesaverage.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
           gb.configure_column('averageweight', headerName='Weight', valueFormatter="data.averageweight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})")
      
-     gb.configure_column('name', hide=True,suppressToolPanel=True)
+     gb.configure_column('nameyear', hide=True,suppressToolPanel=True)
      gb.configure_selection(selection_mode="single", use_checkbox=False)
      gb.configure_column('thumbnail', headerName='', minWidth=thumb_width, cellRenderer=image_thumbnail, initialPinned='left')     
      gridOptions = gb.build()
@@ -225,7 +230,7 @@ elif analysis_type == 'user predictions':
                if mobile == 'mobile':
                     image_thumbnail = img_thumbnail_mobile
                     thumb_width = 100
-                    gb = GridOptionsBuilder.from_dataframe(user_scores[['thumbnail', 'url', 'name', 'preds']])
+                    gb = GridOptionsBuilder.from_dataframe(user_scores[['thumbnail', 'url', 'nameyear', 'preds']])
                     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
                     gb.configure_grid_options(rowHeight=100, pagination=True)
                     gb.configure_column("url", wrapText=True, headerName='Name', cellRenderer=link_jscode)
@@ -233,7 +238,7 @@ elif analysis_type == 'user predictions':
                else:
                     image_thumbnail = img_thumbnail_desktop
                     thumb_width = 130
-                    gb = GridOptionsBuilder.from_dataframe(user_scores[['url', 'preds', 'average', 'bayesaverage', 'usersrated', 'averageweight', 'name', 'thumbnail']])
+                    gb = GridOptionsBuilder.from_dataframe(user_scores[['url', 'preds', 'average', 'bayesaverage', 'usersrated', 'averageweight', 'nameyear', 'thumbnail']])
                     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=rowsperpage)
                     gb.configure_grid_options(rowHeight=100, pagination=True)
                     gb.configure_column("url", wrapText=True, minWidth=120, headerName='Name', cellRenderer=link_jscode)
@@ -243,7 +248,7 @@ elif analysis_type == 'user predictions':
                     gb.configure_column('bayesaverage', headerName='GeekRating', valueFormatter="data.bayesaverage.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})")
                     gb.configure_column('averageweight', headerName='Weight', valueFormatter="data.averageweight.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})")
 
-               gb.configure_column('name', hide=True,suppressToolPanel=True)
+               gb.configure_column('nameyear', hide=True,suppressToolPanel=True)
                gb.configure_column('thumbnail', headerName='', minWidth=thumb_width, cellRenderer=image_thumbnail, initialPinned='left')
                gridOptions = gb.build()
                user_scoreag = AgGrid(
