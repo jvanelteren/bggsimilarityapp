@@ -24,17 +24,26 @@ def load_inputs():
 def getgames(game):
      return model.most_similar_games(game)
 
+@st.experimental_memo(ttl=24*60*60)
+def get_gamelist():
+     return model.df.sort_values('usersrated', ascending=False)['name'].copy()
+
+
 def update():
      # refreshes table when filters are changed
      st.session_state['selected_game'] = st.session_state['selected_game']
 
 def modelupdate():
      # refreshes table when filters are changed
-     if st.session_state['model'] == 'standard':
-          model.m = model.modelstandard
-     elif st.session_state['model'] == 'experimental':
-          model.m = model.modeltransform
-     update()
+     try:
+          if st.session_state['model'] == 'standard':
+               model.m = model.modelstandard
+          elif st.session_state['model'] == 'experimental':
+               model.m = model.modeltransform
+          update()
+     except:
+          st.experimental_memo.clear()
+          load_inputs()
      
 # Initialisation of session state
 def init(clear_cache=False):
@@ -139,6 +148,7 @@ st.set_page_config(
 
 load_inputs()
 init()
+gamelist = get_gamelist()
 
 # Sidebar filters
 st.sidebar.header('App version')
@@ -148,7 +158,7 @@ st.sidebar.write('<style>div.row-widget.stRadio > div{flex-direction:row;}</styl
 st.sidebar.header('Options')
 st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, on_change=update, format="%.1f")
 st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update, help='The rating of games with few ratings is less reliable')
-st.sidebar.slider("Weight between",0.,5., value=[0.,5.], key='weight', step = 0.1, on_change=update, format="%.1f", help='The weight is a measure for complexity & depth, 1=Very light games, 5=Very heavy games. Here you can select ligher or heavier games.')
+st.sidebar.slider("Weight between",0.,5., value=st.session_state['weight'], key='weight', step = 0.1, on_change=update, format="%.1f", help='The weight is a measure for complexity & depth, 1=Very light games, 5=Very heavy games. Here you can select ligher or heavier games.')
 st.sidebar.select_slider("Maximum year of publication",['No filter', *list(range(2015, 2024))], key='year', on_change=update, help='You can use this to filter out newer games which often have hyped ratings')
 st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_incl', help="BoardGameGeek has a boardgame category and mechanic. I've combined them into 'tags'")
 st.sidebar.multiselect('Excluding all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_excl')
@@ -162,8 +172,12 @@ if st.sidebar.button('Reset selections'):
 st.title('BoardGame Explorer')
 if analysis_type == 'similarity':
      placeholder = st.empty()
-     
-     df = filter(getgames(st.session_state['selected_game']))
+     try:
+          df = filter(getgames(st.session_state['selected_game']))
+     except:
+          st.experimental_memo.clear()
+          st.experimental_rerun()
+          
      rowsperpage = 50
      grid_height= 100 * min(len(df), rowsperpage) + 80
      
@@ -201,10 +215,11 @@ if analysis_type == 'similarity':
 
      if grid_response['selected_rows']:
           if grid_response['selected_rows'][0]['name'] != st.session_state['selected_game']:
-               st.session_state['selected_game'] = grid_response['selected_rows'][0]['name']
+               st.session_state['selected_game'] = grid_response['selected_rows'][0]['name'] 
                st.experimental_rerun()
 
-     placeholder.selectbox(label="This app is designed to find similar games. You might find games you didn't know but love 😍 even more!", options=model.df.sort_values('usersrated', ascending=False)['name'], key='selected_game')
+
+     placeholder.selectbox(label="This app is designed to find similar games. You might find games you didn't know but love 😍 even more!", options=gamelist, key='selected_game')
      
      with st.expander("🔎  Click for explanation"):
           st.write("""
