@@ -19,7 +19,8 @@ def load_inputs():
      model.boardgamemechanic = load_pickle('./input/boardgamemechanic.pickle')
      model.boardgamecategory = load_pickle('./input/boardgamecategory.pickle')
      model.df = model.table()
-     
+
+# @st.experimental_memo(max_entries=10)
 def getgames(game):
      return model.most_similar_games(game)
 
@@ -173,6 +174,7 @@ st.title('BoardGame Explorer')
 if analysis_type == 'similarity':
      placeholder = st.empty()
      try:
+          
           df = filter(getgames(st.session_state['selected_game']))
      except:
           st.experimental_memo.clear()
@@ -285,7 +287,7 @@ elif analysis_type == 'user predictions':
                     fit_columns_on_grid_load=True,
                     allow_unsafe_jscode=True)
           else:
-               st.write('Sumbit a BGG username that rated at least 10 games beginning of 2022')
+               st.write('Submit a BGG username that rated at least 10 games beginning of 2022')
      
 with st.expander("⚙️ Thanks & feedback ", expanded=False):
      st.markdown(

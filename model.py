@@ -7,7 +7,7 @@ path = Path()
 def create_params(size):
     return nn.Parameter(torch.zeros(*size).normal_(0, 0.01))
 
-@st.experimental_memo(ttl=24*60*60)
+# @st.experimental_memo(ttl=24*60*60)
 def most_similar_games(gamename):
     gameidx = games.o2i[gamename]
     distances = nn.CosineSimilarity(dim=1)(m.game_factors, m.game_factors[gameidx][None])
