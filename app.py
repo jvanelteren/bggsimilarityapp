@@ -290,12 +290,15 @@ elif analysis_type == 'user predictions':
 with st.expander("⚙️ Thanks & feedback ", expanded=False):
      st.markdown(
                """
-          Let me know if you have feedback, e.g. on Reddit
+          Let me know if you have feedback, e.g. [on Reddit](https://boardgamegeek.com/thread/2811605/made-recommender-based-19m-ratings) or [LinkedIn](https://www.linkedin.com/posts/jessevanelteren_just-launched-the-boardgame-explorer-activity-6897193153204420610-YxkN)
+          
+          I also made [an analysis of the ratings](https://jvanelteren.github.io/blog/2022/01/19/boardgames.html) with a nice discussion again [on Reddit](https://www.reddit.com/r/boardgames/comments/s8fu55/analyzed_all_19m_reviews_from_boardgamegeek_this/)
 
           Thanks to:
 
           * :sun_with_face: [BoardGameGeek](https://boardgamegeek.com/) for making their data openly available.
           * :sun_with_face: [Streamlit](https://streamlit.io/) for such a great data science tool
+          * :sun_with_face: beefsack for the [bgg-ranking-historicals](https://github.com/beefsack/bgg-ranking-historicals)
 
           [![License: Creative Commons Naamsvermelding-GelijkDelen 4.0 Internationaal-licentie](https://i.creativecommons.org/l/by-sa/4.0/80x15.png)](https://creativecommons.org/licenses/by-sa/3.0/) 2022 Jesse van Elteren
                """
