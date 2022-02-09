@@ -20,7 +20,6 @@ def load_inputs():
      model.boardgamecategory = load_pickle('./input/boardgamecategory.pickle')
      model.df = model.table()
      
-@st.experimental_memo(ttl=24*60*60)
 def getgames(game):
      return model.most_similar_games(game)
 
@@ -69,6 +68,7 @@ def init(clear_cache=False):
      st.session_state.setdefault('tag_excl', [])
      modelupdate()
 
+@st.experimental_memo(ttl=24*60*60)
 def filter(df):
      filtered_df = df.loc[(df['usersrated'] >= st.session_state['minvotes']) &
                           (df['average'] >= st.session_state['minaverage']) &
