@@ -297,6 +297,7 @@ with st.expander("⚙️ Thanks & feedback ", expanded=False):
           Thanks to:
 
           * :sun_with_face: [BoardGameGeek](https://boardgamegeek.com/) for making their data openly available.
+          * :sun_with_face: [Fast.ai](https://www.fast.ai/) for a great deep learning framework and free courses
           * :sun_with_face: [Streamlit](https://streamlit.io/) for such a great data science tool
           * :sun_with_face: beefsack for the [bgg-ranking-historicals](https://github.com/beefsack/bgg-ranking-historicals)
 
