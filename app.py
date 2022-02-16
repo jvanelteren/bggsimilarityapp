@@ -9,42 +9,37 @@ from st_aggrid.shared import GridUpdateMode
 pd.options.display.max_rows = 20
 pd.options.display.float_format = "{:,.1f}".format
 pd.options.mode.chained_assignment = None
+from collections import namedtuple
+Model = namedtuple('model', 'modelstandard modeltransform users games boardgamemechanic boardgamecategory df gamelist')
 
-@st.experimental_memo(ttl=24*60*60)
+# @st.cache()
+@st.experimental_singleton()
 def load_inputs():
-     model.modelstandard = load_pickle('./input/size30model.pickle')
-     model.modeltransform = load_pickle('./input/size30modeltransform.pickle')
-     model.users = load_pickle('./input/userids.pickle')
-     model.games = load_pickle('./input/gameids.pickle')
-     model.boardgamemechanic = load_pickle('./input/boardgamemechanic.pickle')
-     model.boardgamecategory = load_pickle('./input/boardgamecategory.pickle')
-     model.df = model.table()
+     df_games = pd.read_csv('./input/games_detailed_info_incl_modelid.csv')
+     cols = ['thumbnail','url','name','usersrated','average', 'bayesaverage', 'averageweight', 'tag','yearpublished']
+     # 'model_score','distance'
+     df =  df_games[cols]
+    
+     gamelist = df.sort_values('usersrated', ascending=False)['name'].copy()
+     return Model(
+          modelstandard = load_pickle('./input/size30model.pickle'),
+          modeltransform = load_pickle('./input/size30modeltransform.pickle'),
+          users = load_pickle('./input/userids.pickle'),
+          games = load_pickle('./input/gameids.pickle'),
+          boardgamemechanic = load_pickle('./input/boardgamemechanic.pickle'),
+          boardgamecategory = load_pickle('./input/boardgamecategory.pickle'),
+          df = df,
+          gamelist = gamelist)
 
-# @st.experimental_memo(max_entries=10)
 def getgames(game):
-     return model.most_similar_games(game)
+     return model.most_similar_games(game,m, st.session_state['model'])
 
-@st.experimental_memo(ttl=24*60*60)
-def get_gamelist():
-     return model.df.sort_values('usersrated', ascending=False)['name'].copy()
 
 
 def update():
      # refreshes table when filters are changed
      st.session_state['selected_game'] = st.session_state['selected_game']
 
-def modelupdate():
-     # refreshes table when filters are changed
-     try:
-          if st.session_state['model'] == 'standard':
-               model.m = model.modelstandard
-          elif st.session_state['model'] == 'experimental':
-               model.m = model.modeltransform
-          update()
-     except:
-          st.experimental_memo.clear()
-          load_inputs()
-     
 # Initialisation of session state
 def init(clear_cache=False):
      if clear_cache:
@@ -67,9 +62,8 @@ def init(clear_cache=False):
      st.session_state.setdefault('model', 'standard')
      st.session_state.setdefault('tag_incl', [])
      st.session_state.setdefault('tag_excl', [])
-     modelupdate()
+     update()
 
-@st.experimental_memo(ttl=24*60*60)
 def filter(df):
      filtered_df = df.loc[(df['usersrated'] >= st.session_state['minvotes']) &
                           (df['average'] >= st.session_state['minaverage']) &
@@ -147,9 +141,8 @@ st.set_page_config(
    page_icon="🎈",
 )
 
-load_inputs()
+m = load_inputs()
 init()
-gamelist = get_gamelist()
 
 # Sidebar filters
 st.sidebar.header('App version')
@@ -161,24 +154,24 @@ st.sidebar.slider("Minimum average rating",0.,10., key='minaverage', step=0.1, o
 st.sidebar.slider("Minimal amount of ratings",0,5000, key='minvotes', step=100, on_change=update, help='The rating of games with few ratings is less reliable')
 st.sidebar.slider("Weight between",0.,5., value=st.session_state['weight'], key='weight', step = 0.1, on_change=update, format="%.1f", help='The weight is a measure for complexity & depth, 1=Very light games, 5=Very heavy games. Here you can select ligher or heavier games.')
 st.sidebar.select_slider("Maximum year of publication",['No filter', *list(range(2015, 2024))], key='year', on_change=update, help='You can use this to filter out newer games which often have hyped ratings')
-st.sidebar.multiselect('Having all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_incl', help="BoardGameGeek has a boardgame category and mechanic. I've combined them into 'tags'")
-st.sidebar.multiselect('Excluding all these tags', model.boardgamecategory + model.boardgamemechanic, key='tag_excl')
+st.sidebar.multiselect('Having all these tags', m.boardgamecategory + m.boardgamemechanic, key='tag_incl', help="BoardGameGeek has a boardgame category and mechanic. I've combined them into 'tags'")
+st.sidebar.multiselect('Excluding all these tags', m.boardgamecategory + m.boardgamemechanic, key='tag_excl')
 st.sidebar.radio("Amount of results",[10, 50,22000], key='amountresults', on_change=update, help='Select 22000 if you want to return all of the games')
-st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=modelupdate, help='In the experimental model the ratings are transformed before training: (rating ** 2)/10, to account for the nonlinearity of the 1-10 scale. Since the difference between a 7 or an 8 is much larger than the difference between a 3 and a 4.')
+st.sidebar.radio("Model",['standard', 'experimental'], key='model', on_change=update, help='In the experimental model the ratings are transformed before training: (rating ** 2)/10, to account for the nonlinearity of the 1-10 scale. Since the difference between a 7 or an 8 is much larger than the difference between a 3 and a 4.')
 if st.sidebar.button('Reset selections'):
      init(clear_cache=True)
      st.experimental_rerun()
 
 
-st.title('BoardGame Explorer')
+# st.title('BoardGame Explorer')
 if analysis_type == 'similarity':
      placeholder = st.empty()
-     try:
+#      try:
           
-          df = filter(getgames(st.session_state['selected_game']))
-     except:
-          st.experimental_memo.clear()
-          st.experimental_rerun()
+     df = filter(getgames(st.session_state['selected_game']))
+#      except:
+#           st.experimental_memo.clear()
+#           st.experimental_rerun()
           
      rowsperpage = 50
      grid_height= 100 * min(len(df), rowsperpage) + 80
@@ -217,11 +210,12 @@ if analysis_type == 'similarity':
 
      if grid_response['selected_rows']:
           if grid_response['selected_rows'][0]['name'] != st.session_state['selected_game']:
-               st.session_state['selected_game'] = grid_response['selected_rows'][0]['name'] 
+               st.session_state['selected_game'] = grid_response['selected_rows'][0]['name']
+               st.write(st.session_state['selected_game'])
                st.experimental_rerun()
 
 
-     placeholder.selectbox(label="This app is designed to find similar games. You might find games you didn't know but love 😍 even more!", options=gamelist, key='selected_game')
+     placeholder.selectbox(label="This app is designed to find similar games. You might find games you didn't know but love 😍 even more!", options=m.gamelist, key='selected_game')
      
      with st.expander("🔎  Click for explanation"):
           st.write("""
@@ -251,8 +245,8 @@ elif analysis_type == 'user predictions':
 
      user = st.text_input('Enter your BoardGameGeek user name to get your predictions')
      if user:
-          if user in model.users:
-               user_scores = filter(model.get_user_preds(user))
+          if user in m.users:
+               user_scores = filter(model.get_user_preds(user, m, st.session_state['model']))
                rowsperpage = 50
                grid_height= 100 * min(len(user_scores), rowsperpage) + 80
                if mobile == 'mobile':

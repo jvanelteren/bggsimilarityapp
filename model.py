@@ -1,18 +1,19 @@
 from fastai.collab import *
 from fastai.tabular.all import *
 from pathlib import Path
-import streamlit as st
 path = Path()
     
 def create_params(size):
     return nn.Parameter(torch.zeros(*size).normal_(0, 0.01))
 
 # @st.experimental_memo(ttl=24*60*60)
-def most_similar_games(gamename):
-    gameidx = games.o2i[gamename]
-    distances = nn.CosineSimilarity(dim=1)(m.game_factors, m.game_factors[gameidx][None])
+def most_similar_games(gamename, m, selectedmodel):
+    model = m.modelstandard if selectedmodel == 'standard' else m.modeltransform
+    
+    gameidx = m.games.o2i[gamename]
+    distances = nn.CosineSimilarity(dim=1)(model.game_factors, model.game_factors[gameidx][None])
     idx = distances.argsort(descending=True)
-    gamesdf = df.copy()
+    gamesdf = m.df.copy()
     gamesdf['similarity'] = distances.detach().numpy().copy()
     return gamesdf.iloc[idx.numpy()]
 
@@ -38,23 +39,22 @@ def get_user_best_unseen(user, verbose=False):
 
 def gameid(gamename):
     return games.o2i[gamename]
-def userid(username):
-    return users.o2i[username]
 
 def search_game(gamename):
     return [(name, idx) for idx, name in enumerate(games) if gamename in name]
 def search_user(username):
     return [(name, idx) for idx, name in enumerate(users) if username in name]
 
-def get_user_preds(user):
-    user_idx = userid(user)
+def get_user_preds(user, m, selectedmodel):
+    user_idx = m.users.o2i[user]
+    
+    model = m.modelstandard if selectedmodel == 'standard' else m.modeltransform
 
-    preds = ((m.user_factors[user_idx] * m.game_factors).sum(dim=1) + m.game_bias + m.user_bias[user_idx])
+    preds = ((model.user_factors[user_idx] * model.game_factors).sum(dim=1) + model.game_bias + model.user_bias[user_idx])
     preds = sigmoid_range(preds, 0,11)
-    user_preds = df.copy()
+    user_preds = m.df.copy()
     user_preds['preds'] = preds.detach().numpy().clip(1,10)
     user_preds.sort_values('preds', ascending=False, inplace=True)
-    
     
     return user_preds
 
@@ -77,15 +77,4 @@ def get_game_preds(game):
     return preds
 
 
-def table():
-    df_games = pd.read_csv('./input/games_detailed_info_incl_modelid.csv')
-    cols = ['thumbnail','url','name','usersrated','average', 'bayesaverage', 'averageweight', 'tag','yearpublished']
-    # 'model_score','distance'
-    df =  df_games[cols]
-    
-    return df
-    # return df[['thumbnail','primary','usersrated','bayesaverage','average','model_score','distance','id', 'tag']].copy()
-
-
-    
 
