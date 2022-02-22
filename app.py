@@ -137,7 +137,7 @@ img_thumbnail_desktop = JsCode("""function (params) {
      # element.appendChild(document.createTextNode(params.value));
 
 st.set_page_config(
-   page_title="BoardGame Explorer",
+   page_title="BoardGame Finder",
    page_icon="🎈",
 )
 
@@ -163,7 +163,7 @@ if st.sidebar.button('Reset selections'):
      st.experimental_rerun()
 
 
-# st.title('BoardGame Explorer')
+st.title('BoardGame Finder')
 if analysis_type == 'similarity':
      placeholder = st.empty()
 #      try:
@@ -286,8 +286,6 @@ elif analysis_type == 'user predictions':
 with st.expander("⚙️ Thanks & feedback ", expanded=False):
      st.markdown(
                """
-          Let me know if you have feedback, e.g. [on Reddit](https://boardgamegeek.com/thread/2811605/made-recommender-based-19m-ratings) or [LinkedIn](https://www.linkedin.com/posts/jessevanelteren_just-launched-the-boardgame-explorer-activity-6897193153204420610-YxkN)
-          
           I also made [an analysis of the ratings](https://jvanelteren.github.io/blog/2022/01/19/boardgames.html) with a nice discussion again [on Reddit](https://www.reddit.com/r/boardgames/comments/s8fu55/analyzed_all_19m_reviews_from_boardgamegeek_this/)
 
           Thanks to:
