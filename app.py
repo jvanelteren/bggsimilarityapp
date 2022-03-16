@@ -73,7 +73,7 @@ def filter(df):
                           ][:st.session_state['amountresults']]
 
      if 'year' in st.session_state and st.session_state['year'] != 'No filter':
-          filtered_df = df.loc[(df['yearpublished'] <= int(st.session_state['year']))]
+          filtered_df = filtered_df.loc[(df['yearpublished'] <= int(st.session_state['year']))]
           
      for tag in st.session_state['tag_incl']:
           filtered_df = filtered_df.loc[filtered_df['tag'].str.contains(tag)]
@@ -81,10 +81,6 @@ def filter(df):
           reg = '|'.join(st.session_state['tag_excl'])
           filtered_df = filtered_df.loc[~filtered_df['tag'].str.contains(reg, regex=True)]
      
-     # filtered_df.set_index('thumbnail', inplace=True)
-     # filtered_df.index.name = None
-     
-     # filtered_df =  filtered_df.sort_values('similarity', ascending=False)
      return filtered_df
 
 link_jscode = JsCode("""
@@ -166,12 +162,7 @@ if st.sidebar.button('Reset selections'):
 st.title('BoardGame Finder')
 if analysis_type == 'similarity':
      placeholder = st.empty()
-#      try:
-          
      df = filter(getgames(st.session_state['selected_game']))
-#      except:
-#           st.experimental_memo.clear()
-#           st.experimental_rerun()
           
      rowsperpage = 50
      grid_height= 100 * min(len(df), rowsperpage) + 80
